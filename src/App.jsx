@@ -123,6 +123,7 @@ const TEMPLATE_OPTIONS = {
     titleWords: ["SPARK", "LEARN", "GROW"],
     cardTransparency: 82,
     titleQuoteLabel: "Quote",
+    layoutVariant: "balanced",
   },
   playful: {
     label: "Playful",
@@ -132,6 +133,7 @@ const TEMPLATE_OPTIONS = {
     titleWords: ["PLAY", "MAKE", "SHINE"],
     cardTransparency: 76,
     titleQuoteLabel: "Class Motto",
+    layoutVariant: "expressive",
   },
   formal: {
     label: "Formal",
@@ -141,6 +143,7 @@ const TEMPLATE_OPTIONS = {
     titleWords: ["FOCUS", "STRUCTURE", "RESULT"],
     cardTransparency: 88,
     titleQuoteLabel: "Key Thought",
+    layoutVariant: "split",
   },
 };
 
@@ -158,6 +161,39 @@ const FRAMEWORK_OPTIONS = {
     description: "Elicit, Engage, Explore, Explain, Elaborate, Evaluate, Extend",
   },
 };
+
+const DETAIL_OPTIONS = {
+  minimal: {
+    label: "Minimal",
+    description: "Cleaner slides with shorter text blocks.",
+  },
+  balanced: {
+    label: "Balanced",
+    description: "Default level with enough detail for teaching.",
+  },
+  detailed: {
+    label: "Detailed",
+    description: "More guidance, more explanation, more teaching prompts.",
+  },
+};
+
+function clampWords(text, maxWords) {
+  const words = `${text}`.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) {
+    return text;
+  }
+  return `${words.slice(0, maxWords).join(" ")}...`;
+}
+
+function pickByDetail(detailLevel, minimal, balanced, detailed = balanced) {
+  if (detailLevel === "minimal") {
+    return minimal;
+  }
+  if (detailLevel === "detailed") {
+    return detailed;
+  }
+  return balanced;
+}
 
 function getFrameworkContent(frameworkKey) {
   switch (frameworkKey) {
@@ -204,15 +240,16 @@ function getSlideLabels(frameworkKey) {
       return [
         { icon: "1", label: "Title" },
         { icon: "2", label: "Engage" },
-        { icon: "3", label: "Explore" },
-        { icon: "4", label: "Explore 2" },
-        { icon: "5", label: "Explain" },
-        { icon: "6", label: "Explain 2" },
-        { icon: "7", label: "Explain 3" },
-        { icon: "8", label: "Elaborate" },
-        { icon: "9", label: "Evaluate" },
-        { icon: "10", label: "Assignment" },
-        { icon: "11", label: "Closing" },
+        { icon: "3", label: "Engage 2" },
+        { icon: "4", label: "Explore" },
+        { icon: "5", label: "Explore 2" },
+        { icon: "6", label: "Explain" },
+        { icon: "7", label: "Explain 2" },
+        { icon: "8", label: "Explain 3" },
+        { icon: "9", label: "Elaborate" },
+        { icon: "10", label: "Evaluate" },
+        { icon: "11", label: "Assignment" },
+        { icon: "12", label: "Closing" },
       ];
     case "sevenEs":
       return [
@@ -220,13 +257,15 @@ function getSlideLabels(frameworkKey) {
         { icon: "2", label: "Elicit" },
         { icon: "3", label: "Engage" },
         { icon: "4", label: "Explore" },
-        { icon: "5", label: "Explain" },
-        { icon: "6", label: "Elaborate" },
-        { icon: "7", label: "Elaborate 2" },
-        { icon: "8", label: "Extend" },
-        { icon: "9", label: "Evaluate" },
-        { icon: "10", label: "Assignment" },
-        { icon: "11", label: "Closing" },
+        { icon: "5", label: "Explore 2" },
+        { icon: "6", label: "Explain" },
+        { icon: "7", label: "Elaborate" },
+        { icon: "8", label: "Elaborate 2" },
+        { icon: "9", label: "Extend" },
+        { icon: "10", label: "Extend 2" },
+        { icon: "11", label: "Evaluate" },
+        { icon: "12", label: "Assignment" },
+        { icon: "13", label: "Closing" },
       ];
     case "fourAs":
     default:
@@ -285,14 +324,103 @@ function buildPptx(data) {
     slide.addText(lbl, { x, y, w: 1.7, h: 0.32, fontSize: 9, bold: true, color: P.white, align: "center", valign: "middle", margin: 0, charSpacing: 2 });
   }
 
+  function addVisualFrame(slide, opts) {
+    const { x, y, w, h, col, light, label, imageData, accent } = opts;
+    card(slide, x, y, w, h, col || P.blue, light || P.blueL);
+    if (imageData) {
+      slide.addImage({ data: imageData, x: x + 0.12, y: y + 0.12, w: w - 0.24, h: h - 0.24, rounding: true });
+      return;
+    }
+    slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: x + 0.2,
+      y: y + 0.22,
+      w: w - 0.4,
+      h: h - 0.44,
+      rectRadius: 0.08,
+      fill: { color: P.white, transparency: 28 },
+      line: { color: accent || col || P.blue, dashType: "dash", pt: 1.5 },
+    });
+    slide.addShape(pres.shapes.OVAL, {
+      x: x + w / 2 - 0.28,
+      y: y + 0.42,
+      w: 0.56,
+      h: 0.56,
+      fill: { color: accent || col || P.blue },
+      line: { color: accent || col || P.blue },
+    });
+    slide.addText("IMG", {
+      x: x + w / 2 - 0.28,
+      y: y + 0.42,
+      w: 0.56,
+      h: 0.56,
+      fontSize: 11,
+      bold: true,
+      color: P.white,
+      align: "center",
+      valign: "middle",
+      margin: 0,
+    });
+    slide.addText(label || "Insert image here", {
+      x: x + 0.35,
+      y: y + h / 2 - 0.05,
+      w: w - 0.7,
+      h: 0.6,
+      fontSize: 12,
+      bold: true,
+      color: accent || col || P.blue,
+      align: "center",
+      valign: "middle",
+      margin: 0,
+    });
+    slide.addText("Teacher can replace this with a local image or diagram.", {
+      x: x + 0.4,
+      y: y + h / 2 + 0.35,
+      w: w - 0.8,
+      h: 0.42,
+      fontSize: 9.5,
+      color: P.black,
+      italic: true,
+      align: "center",
+      valign: "middle",
+      margin: 0,
+    });
+  }
+
+  function addFrameworkSpotlight(slide, title, body, col, light) {
+    card(slide, 0.35, 1.58, 9.3, 3.5, col, light);
+    slide.addText(title, { x: 0.6, y: 1.8, w: 8.8, h: 0.45, fontSize: 24, bold: true, color: col, margin: 0 });
+    slide.addText(body, { x: 0.6, y: 2.4, w: 5.0, h: 1.6, fontSize: 15, color: P.black, margin: 0 });
+    addVisualFrame(slide, {
+      x: 6.05,
+      y: 2.02,
+      w: 3.2,
+      h: 2.45,
+      col,
+      light,
+      label: "Add supporting visual",
+      imageData: data.images?.concept,
+      accent: col,
+    });
+  }
+
   {
     const sl = pres.addSlide();
     sl.background = { color: P.dark };
     [[0, 0, 3.5, P.purple, 55], [6.5, 3.5, 4, P.blue, 60], [4, 1.5, 2.5, P.teal, 65], [-0.5, 3.8, 3, P.pink, 65], [7.5, -0.5, 2.5, P.orange, 65]]
       .forEach(([x, y, s, c, t]) => sl.addShape(pres.shapes.OVAL, { x, y, w: s, h: s, fill: { color: c, transparency: t }, line: { color: c, transparency: t } }));
-    sl.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 0.7, w: 9, h: 2.6, fill: { color: P.white, transparency: 10 }, line: { color: P.white, transparency: 30 } });
-    sl.addText(data.topic, { x: 0.6, y: 0.8, w: 8.8, h: 1.3, fontSize: 44, bold: true, color: P.white, valign: "middle", margin: 0 });
-    sl.addText(data.subject, { x: 0.6, y: 2.1, w: 8.8, h: 0.52, fontSize: 20, color: P.yellowL, valign: "middle", margin: 0 });
+    if (template.layoutVariant === "split") {
+      sl.addShape(pres.shapes.RECTANGLE, { x: 0.45, y: 0.62, w: 4.9, h: 3.45, fill: { color: P.white, transparency: 10 }, line: { color: P.white, transparency: 30 } });
+      addVisualFrame(sl, { x: 5.7, y: 0.72, w: 3.65, h: 3.2, col: P.blue, light: P.blueL, label: "Add title image", imageData: data.images?.title, accent: P.blue });
+      sl.addText(data.topic, { x: 0.65, y: 0.9, w: 4.4, h: 1.35, fontSize: 34, bold: true, color: P.white, valign: "middle", margin: 0 });
+      sl.addText(data.subject, { x: 0.65, y: 2.28, w: 4.4, h: 0.45, fontSize: 18, color: P.yellowL, valign: "middle", margin: 0 });
+    } else {
+      sl.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 0.7, w: 9, h: 2.6, fill: { color: P.white, transparency: 10 }, line: { color: P.white, transparency: 30 } });
+      sl.addText(data.topic, { x: 0.6, y: 0.8, w: 8.8, h: 1.3, fontSize: template.layoutVariant === "expressive" ? 40 : 44, bold: true, color: P.white, valign: "middle", margin: 0 });
+      sl.addText(data.subject, { x: 0.6, y: 2.1, w: 8.8, h: 0.52, fontSize: 20, color: P.yellowL, valign: "middle", margin: 0 });
+      if (template.layoutVariant === "expressive") {
+        addVisualFrame(sl, { x: 6.3, y: 0.95, w: 2.5, h: 1.8, col: P.orange, light: P.orangeL, label: "Add cover visual", imageData: data.images?.title, accent: P.orange });
+      }
+    }
     [[data.subject, "purple"], [`Grade ${data.gradeLevel}`, "blue"], [data.quarter || "Q1", "orange"]].forEach(([t, k], i) => {
       const col = k === "purple" ? P.purple : k === "blue" ? P.blue : P.orange;
       sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.6 + i * 2.1, y: 3.48, w: 1.85, h: 0.38, fill: { color: col }, line: { color: col }, rectRadius: 0.1 });
@@ -307,19 +435,27 @@ function buildPptx(data) {
     const sl = pres.addSlide();
     hdr(sl, "Learning Objectives", framework.objectivesSub, P.purple);
     [
-      { letter: "A", label: "KNOWLEDGE", icon: "BRAIN", text: data.objectives.knowledge, col: P.purple, lt: P.purpleL },
-      { letter: "B", label: "SKILLS", icon: "WRITE", text: data.objectives.skills, col: P.blue, lt: P.blueL },
-      { letter: "C", label: "ATTITUDE", icon: "IDEA", text: data.objectives.attitude, col: P.green, lt: P.greenL },
+      { letter: "A", label: "KNOWLEDGE", icon: "🧠", text: data.objectives.knowledge, col: P.purple, lt: P.purpleL },
+      { letter: "B", label: "SKILLS", icon: "✍", text: data.objectives.skills, col: P.blue, lt: P.blueL },
+      { letter: "C", label: "ATTITUDE", icon: "💡", text: data.objectives.attitude, col: P.green, lt: P.greenL },
     ].forEach((o, i) => {
       const y = 1.5 + i * 1.17;
       card(sl, 0.35, y, 9.3, 1.05, o.col, o.lt);
       sl.addShape(pres.shapes.OVAL, { x: 0.5, y: y + 0.18, w: 0.68, h: 0.68, fill: { color: o.col }, line: { color: o.col } });
       sl.addText(o.letter, { x: 0.5, y: y + 0.18, w: 0.68, h: 0.68, fontSize: 20, bold: true, color: P.white, align: "center", valign: "middle", margin: 0 });
-      sl.addText(o.icon, { x: 1.28, y: y + 0.18, w: 0.75, h: 0.2, fontSize: 8, bold: true, color: o.col, margin: 0 });
+      sl.addText(o.icon, { x: 1.24, y: y + 0.18, w: 0.55, h: 0.55, fontSize: 18, margin: 0, align: "center", valign: "middle" });
       sl.addText(o.label, { x: 1.9, y: y + 0.13, w: 2.5, h: 0.32, fontSize: 11, bold: true, color: o.col, margin: 0, charSpacing: 2 });
       sl.addText(o.text, { x: 1.9, y: y + 0.45, w: 7.55, h: 0.52, fontSize: 12, color: P.black, margin: 0 });
     });
     sl.addText(`Competency: ${data.competency}`, { x: 0.35, y: 5.0, w: 9.3, h: 0.25, fontSize: 9, color: P.purple, italic: true, margin: 0 });
+  }
+
+  if (data.framework === "fiveEs" || data.framework === "sevenEs") {
+    const sl = pres.addSlide();
+    const hookColor = data.framework === "sevenEs" ? P.blue : P.orange;
+    const hookLight = data.framework === "sevenEs" ? P.blueL : P.orangeL;
+    hdr(sl, data.hook.title, data.hook.subtitle, hookColor);
+    addFrameworkSpotlight(sl, data.hook.prompt, data.hook.body, hookColor, hookLight);
   }
 
   {
@@ -328,19 +464,26 @@ function buildPptx(data) {
     hdr(sl, `Activity: ${act.title}`, framework.activitySub(act.duration), P.orange);
     badge(sl, 0.35, 1.47, `TIME ${act.duration}`, P.orange);
     badge(sl, 2.18, 1.47, "GROUP WORK", P.purple);
-    card(sl, 0.35, 1.9, 5.65, 3.2, P.orange, P.orangeL);
+    card(sl, 0.35, 1.9, template.layoutVariant === "split" ? 4.95 : 5.65, 3.2, P.orange, P.orangeL);
     sl.addText("What To Do:", { x: 0.52, y: 2.02, w: 5.3, h: 0.38, fontSize: 14, bold: true, color: P.orange, margin: 0 });
     (act.steps || []).forEach((step, i) => {
       const y = 2.48 + i * 0.5;
       sl.addText(`${i + 1}.`, { x: 0.5, y, w: 0.5, h: 0.44, fontSize: 16, align: "center", valign: "middle", margin: 0 });
-      sl.addText(step, { x: 1.05, y: y + 0.04, w: 4.82, h: 0.36, fontSize: 11, color: P.black, margin: 0 });
+      sl.addText(step, { x: 1.05, y: y + 0.04, w: template.layoutVariant === "split" ? 4.15 : 4.82, h: 0.36, fontSize: 11, color: P.black, margin: 0 });
     });
-    card(sl, 6.18, 1.9, 3.48, 1.42, P.purple, P.purpleL);
-    sl.addText("Guide Question", { x: 6.32, y: 2.0, w: 3.22, h: 0.38, fontSize: 12, bold: true, color: P.purple, margin: 0 });
-    sl.addText(`"${act.guideQuestion}"`, { x: 6.32, y: 2.42, w: 3.22, h: 0.82, fontSize: 11.5, color: P.black, italic: true, margin: 0 });
-    card(sl, 6.18, 3.45, 3.48, 1.65, P.teal, P.tealL);
-    sl.addText("Materials:", { x: 6.32, y: 3.55, w: 3.22, h: 0.35, fontSize: 12, bold: true, color: P.teal, margin: 0 });
-    sl.addText((act.materials || []).map((m, i) => ({ text: m, options: { bullet: true, breakLine: i < act.materials.length - 1, fontSize: 11, color: P.black } })), { x: 6.32, y: 3.96, w: 3.22, h: 1.1 });
+    if (template.layoutVariant === "split") {
+      addVisualFrame(sl, { x: 5.5, y: 1.9, w: 4.15, h: 2.1, col: P.teal, light: P.tealL, label: "Add activity visual", imageData: data.images?.activity, accent: P.teal });
+      card(sl, 5.5, 4.12, 4.15, 0.98, P.purple, P.purpleL);
+      sl.addText(`Guide: "${act.guideQuestion}"`, { x: 5.7, y: 4.3, w: 3.8, h: 0.25, fontSize: 10.5, color: P.black, italic: true, margin: 0 });
+      sl.addText((act.materials || []).map((m, i) => ({ text: m, options: { bullet: true, breakLine: i < act.materials.length - 1, fontSize: 10, color: P.black } })), { x: 5.7, y: 4.58, w: 3.7, h: 0.34 });
+    } else {
+      card(sl, 6.18, 1.9, 3.48, 1.42, P.purple, P.purpleL);
+      sl.addText("Guide Question", { x: 6.32, y: 2.0, w: 3.22, h: 0.38, fontSize: 12, bold: true, color: P.purple, margin: 0 });
+      sl.addText(`"${act.guideQuestion}"`, { x: 6.32, y: 2.42, w: 3.22, h: 0.82, fontSize: 11.5, color: P.black, italic: true, margin: 0 });
+      card(sl, 6.18, 3.45, 3.48, 1.65, P.teal, P.tealL);
+      sl.addText("Materials:", { x: 6.32, y: 3.55, w: 3.22, h: 0.35, fontSize: 12, bold: true, color: P.teal, margin: 0 });
+      sl.addText((act.materials || []).map((m, i) => ({ text: m, options: { bullet: true, breakLine: i < act.materials.length - 1, fontSize: 11, color: P.black } })), { x: 6.32, y: 3.96, w: 3.22, h: 1.1 });
+    }
   }
 
   {
@@ -369,9 +512,16 @@ function buildPptx(data) {
     const sl = pres.addSlide();
     const def = data.definition;
     hdr(sl, def.title, framework.definitionSub, P.purple);
-    sl.addShape(pres.shapes.RECTANGLE, { x: 0.35, y: 1.5, w: 9.3, h: 1.62, fill: { color: P.purple }, line: { color: P.purple } });
-    sl.addText("Definition", { x: 0.55, y: 1.6, w: 9, h: 0.35, fontSize: 12, bold: true, color: P.purpleL, margin: 0 });
-    sl.addText(def.text, { x: 0.55, y: 1.95, w: 9, h: 1.05, fontSize: 13, color: P.white, margin: 0 });
+    if (template.layoutVariant === "split") {
+      card(sl, 0.35, 1.52, 5.25, 3.55, P.purple, P.purpleL);
+      sl.addText("Definition", { x: 0.55, y: 1.68, w: 4.7, h: 0.35, fontSize: 12, bold: true, color: P.purple, margin: 0 });
+      sl.addText(def.text, { x: 0.55, y: 2.08, w: 4.7, h: 1.5, fontSize: 12.5, color: P.black, margin: 0 });
+      addVisualFrame(sl, { x: 5.88, y: 1.52, w: 3.77, h: 2.28, col: P.blue, light: P.blueL, label: "Add diagram or model", imageData: data.images?.concept, accent: P.blue });
+    } else {
+      sl.addShape(pres.shapes.RECTANGLE, { x: 0.35, y: 1.5, w: 9.3, h: 1.62, fill: { color: P.purple }, line: { color: P.purple } });
+      sl.addText("Definition", { x: 0.55, y: 1.6, w: 9, h: 0.35, fontSize: 12, bold: true, color: P.purpleL, margin: 0 });
+      sl.addText(def.text, { x: 0.55, y: 1.95, w: 9, h: 1.05, fontSize: 13, color: P.white, margin: 0 });
+    }
     (def.purposes || []).slice(0, 3).forEach((p, i) => {
       const cols = [[P.blue, P.blueL], [P.orange, P.orangeL], [P.green, P.greenL]];
       const x = 0.35 + i * 3.17;
@@ -395,7 +545,7 @@ function buildPptx(data) {
       const ci = (start + i) % 8;
       card(sl, x, y, 4.62, 1.85, ACCENTS[ci], LIGHTS[ci]);
       sl.addShape(pres.shapes.OVAL, { x: x + 0.15, y: y + 0.2, w: 0.58, h: 0.58, fill: { color: ACCENTS[ci] }, line: { color: ACCENTS[ci] } });
-      sl.addText(c.icon || "TAG", { x: x + 0.15, y: y + 0.2, w: 0.58, h: 0.58, fontSize: 18, align: "center", valign: "middle", margin: 0 });
+      sl.addText(c.icon || "•", { x: x + 0.15, y: y + 0.2, w: 0.58, h: 0.58, fontSize: 16, align: "center", valign: "middle", margin: 0 });
       sl.addText((c.label || "").toUpperCase(), { x: x + 0.83, y: y + 0.22, w: 3.65, h: 0.35, fontSize: 11.5, bold: true, color: ACCENTS[ci], margin: 0, charSpacing: 1 });
       sl.addText((c.words || []).join(", "), { x: x + 0.15, y: y + 0.86, w: 4.35, h: 0.45, fontSize: 10, color: ACCENTS[ci], italic: true, margin: 0 });
       sl.addShape(pres.shapes.LINE, { x: x + 0.15, y: y + 1.35, w: 4.2, h: 0, line: { color: ACCENTS[ci], width: 1, dashType: "dash" } });
@@ -424,6 +574,12 @@ function buildPptx(data) {
       sl.addText(item, { x: 0.88, y: y + 0.08, w: 8.65, h: 0.38, fontSize: 11.5, color: P.black, margin: 0 });
     });
     sl.addText("Write your answers on your activity sheet.", { x: 0.35, y: 5.08, w: 9.3, h: 0.22, fontSize: 9.5, color: P.orange, italic: true, margin: 0 });
+  }
+
+  if (data.framework === "sevenEs") {
+    const sl = pres.addSlide();
+    hdr(sl, data.extend.title, data.extend.subtitle, P.green);
+    addFrameworkSpotlight(sl, data.extend.prompt, data.extend.body, P.green, P.greenL);
   }
 
   {
@@ -477,7 +633,8 @@ function buildPptx(data) {
       sl.addText(`${i + 1}`, { x: 0.38 + i * 3, y: 3.52, w: 0.42, h: 0.42, fontSize: 14, color: P.white, align: "center", valign: "middle", margin: 0 });
       sl.addText(tk, { x: 0.88 + i * 3, y: 3.55, w: 2.6, h: 0.38, fontSize: 10.5, color: P.white, margin: 0 });
     });
-    sl.addText("Great work today, class!", { x: 0.38, y: 4.22, w: 8.88, h: 0.42, fontSize: 14, bold: true, color: P.yellowL, align: "center", margin: 0 });
+    addVisualFrame(sl, { x: 7.25, y: 3.55, w: 2.0, h: 1.2, col: P.blue, light: P.blueL, label: "Add closing image", imageData: data.images?.closing, accent: P.blue });
+    sl.addText("Great work today, class!", { x: 0.38, y: 4.22, w: 6.55, h: 0.42, fontSize: 14, bold: true, color: P.yellowL, align: "center", margin: 0 });
     sl.addText(`Grade ${data.gradeLevel} ${data.subject} | MATATAG Curriculum`, { x: 0.38, y: 4.8, w: 8.88, h: 0.3, fontSize: 10, color: "999999", align: "center", margin: 0 });
   }
 
@@ -511,6 +668,7 @@ function createLocalLessonData(form) {
   const quarter = form.quarter || "First Quarter";
   const framework = form.framework || "fourAs";
   const frameworkLabel = FRAMEWORK_OPTIONS[framework]?.label || "4A's";
+  const detailLevel = form.detailLevel || "balanced";
   const template = form.template || "classroom";
   const palette = form.palette || "rainbow";
   const templateConfig = TEMPLATE_OPTIONS[template] || TEMPLATE_OPTIONS.classroom;
@@ -519,6 +677,61 @@ function createLocalLessonData(form) {
   const lead = keywords[0] || "Concept";
   const second = keywords[1] || "Process";
   const third = keywords[2] || "Application";
+  const competency = clampWords(
+    form.competency || `Students build understanding and practical use of ${topic} through explanation, examples, and application tasks.`,
+    detailLevel === "minimal" ? 14 : detailLevel === "detailed" ? 28 : 20
+  );
+  const knowledge = clampWords(
+    form.objKnowledge || pickByDetail(
+      detailLevel,
+      `Explain the key idea of ${topic}.`,
+      `Explain the meaning, purpose, and important ideas related to ${topic}.`,
+      `Explain the meaning, purpose, and important ideas related to ${topic}, including how the concept appears in classwork and real situations.`
+    ),
+    detailLevel === "minimal" ? 12 : detailLevel === "detailed" ? 24 : 18
+  );
+  const skills = clampWords(
+    form.objSkills || pickByDetail(
+      detailLevel,
+      `Use ${topic} in guided tasks.`,
+      `Apply what was learned about ${topic} in guided and independent activities.`,
+      `Apply what was learned about ${topic} in guided and independent activities, then produce an example with clear reasoning.`
+    ),
+    detailLevel === "minimal" ? 12 : detailLevel === "detailed" ? 24 : 18
+  );
+  const attitude = clampWords(
+    form.objAttitude || pickByDetail(
+      detailLevel,
+      `Show confidence while learning ${topic}.`,
+      `Show confidence, curiosity, and responsibility while learning about ${topic}.`,
+      `Show confidence, curiosity, and responsibility while learning about ${topic}, especially during collaboration and reflection.`
+    ),
+    detailLevel === "minimal" ? 12 : detailLevel === "detailed" ? 24 : 18
+  );
+  const activitySteps = pickByDetail(
+    detailLevel,
+    [
+      `Observe the sample about ${topic}.`,
+      `Identify one idea connected to ${topic}.`,
+      "Discuss your observation with a partner.",
+      "Share one insight with the class.",
+    ],
+    [
+      `Observe the sample about ${topic}.`,
+      "List the important words or ideas you notice.",
+      `Discuss why ${topic} matters in the lesson.`,
+      "Work with your group to organize your ideas.",
+      "Share one key insight with the class.",
+    ],
+    [
+      `Observe the sample about ${topic}.`,
+      "List the important words or ideas you notice.",
+      `Discuss why ${topic} matters in the lesson.`,
+      "Compare your observations with a classmate.",
+      "Organize your ideas as a group.",
+      "Share one key insight with the class.",
+    ]
+  );
 
   return {
     topic,
@@ -527,73 +740,132 @@ function createLocalLessonData(form) {
     quarter,
     framework,
     frameworkLabel,
+    detailLevel,
     template,
     palette,
     themeLabel: paletteConfig.label,
-    competency: form.competency || `Students build understanding and practical use of ${topic} through explanation, examples, and application tasks.`,
+    competency,
     tagline: `${topic} becomes stronger when students understand it, practice it, and apply it with purpose in the ${templateConfig.label.toLowerCase()} template.`,
+    images: form.images || {},
     objectives: {
-      knowledge: form.objKnowledge || `Explain the meaning, purpose, and important ideas related to ${topic}.`,
-      skills: form.objSkills || `Apply what was learned about ${topic} in guided and independent activities.`,
-      attitude: form.objAttitude || `Show confidence, curiosity, and responsibility while learning about ${topic}.`,
+      knowledge,
+      skills,
+      attitude,
+    },
+    hook: {
+      title: framework === "sevenEs" ? "Elicit and Engage" : "Engage the Lesson",
+      subtitle: framework === "sevenEs" ? "7E's - ELICIT/ENGAGE | Connect prior knowledge to the new lesson" : "5E's - ENGAGE | Activate prior knowledge and curiosity",
+      prompt: pickByDetail(
+        detailLevel,
+        `What do you already know about ${topic}?`,
+        `What do you already know about ${topic}, and where have you seen it before?`,
+        `What do you already know about ${topic}, where have you seen it before, and why might it matter in this lesson?`
+      ),
+      body: pickByDetail(
+        detailLevel,
+        `Start with a short trigger question, image, or quick prompt that gets learners thinking about ${topic}.`,
+        `Start with a short trigger question, image, or quick prompt that gets learners thinking about ${topic} before they explore the lesson more deeply.`,
+        `Start with a short trigger question, image, or quick prompt that gets learners thinking about ${topic}. Ask them to connect it to prior knowledge and predict where the lesson will go next.`
+      ),
     },
     activity: {
       title: `Discovering ${lead}`,
       duration: "10 Minutes",
-      steps: [
-        `Observe the sample about ${topic}.`,
-        "List the important words or ideas you notice.",
-        `Discuss why ${topic} matters in the lesson.`,
-        "Work with your group to organize your ideas.",
-        "Share one key insight with the class.",
-      ],
+      steps: activitySteps,
       guideQuestion: `What makes ${topic} clear, useful, and meaningful for learners?`,
-      materials: ["activity sheet", "pen or pencil", "sample prompt or text"],
+      materials: pickByDetail(
+        detailLevel,
+        ["activity sheet", "pen or pencil"],
+        ["activity sheet", "pen or pencil", "sample prompt or text"],
+        ["activity sheet", "pen or pencil", "sample prompt or text", "optional visual reference"]
+      ),
     },
     analysis: {
       title: `Looking Closely at ${lead}`,
       prompt: `Read both versions carefully. Which one explains ${topic} more clearly?`,
       versionA: {
         label: "Without clear support",
-        text: `${topic} is introduced, but the explanation is short and lacks examples. Some ideas feel disconnected. The audience may understand only part of the lesson.`,
+        text: pickByDetail(
+          detailLevel,
+          `${topic} is introduced, but the explanation is brief and unclear.`,
+          `${topic} is introduced, but the explanation is short and lacks examples. Some ideas feel disconnected. The audience may understand only part of the lesson.`,
+          `${topic} is introduced, but the explanation is short and lacks examples. Some ideas feel disconnected, and the reader cannot easily follow how the concept works in practice.`
+        ),
         note: "The explanation is weak because the ideas are too limited and loosely connected.",
       },
       versionB: {
         label: "With clear support",
-        text: `${topic} is easier to understand when the explanation includes the main idea, a clear example, and a practical classroom application.`,
+        text: pickByDetail(
+          detailLevel,
+          `${topic} becomes clearer when the explanation includes a key idea and example.`,
+          `${topic} is easier to understand when the explanation includes the main idea, a clear example, and a practical classroom application.`,
+          `${topic} is easier to understand when the explanation includes the main idea, a clear example, a useful connection, and a practical classroom application that students can recognize immediately.`
+        ),
         note: "This version is stronger because it gives a clearer flow of ideas and a useful example.",
       },
       discussion: `How did the clearer explanation improve understanding of ${topic}? What details made it stronger?`,
     },
     definition: {
       title: `Understanding ${topic}`,
-      text: `${topic} is a lesson focus that helps learners build knowledge, practice a skill, and connect ideas to real situations. It becomes meaningful when students can explain it clearly, identify examples, and use it in tasks.`,
+      text: pickByDetail(
+        detailLevel,
+        `${topic} helps learners understand an idea and use it in a real task.`,
+        `${topic} is a lesson focus that helps learners build knowledge, practice a skill, and connect ideas to real situations. It becomes meaningful when students can explain it clearly, identify examples, and use it in tasks.`,
+        `${topic} is a lesson focus that helps learners build knowledge, practice a skill, and connect ideas to real situations. It becomes meaningful when students can explain it clearly, identify examples, use it in tasks, and reflect on why it matters.`
+      ),
       purposes: [
-        { icon: "BOOK", title: "Build Knowledge", desc: `Students identify the main ideas behind ${topic}.` },
-        { icon: "TOOLS", title: "Use the Skill", desc: `Learners practice ${topic} through guided activities.` },
-        { icon: "STAR", title: "See the Value", desc: `${topic} becomes useful when linked to real-life situations.` },
+        { icon: "📘", title: "Build Knowledge", desc: `Students identify the main ideas behind ${topic}.` },
+        { icon: "🛠", title: "Use the Skill", desc: `Learners practice ${topic} through guided activities.` },
+        { icon: "⭐", title: "See the Value", desc: `${topic} becomes useful when linked to real-life situations.` },
       ],
     },
     concepts: [
-      { label: "KEY IDEA", icon: "IDEA", words: [lead, "meaning", "focus"], example: `${topic} gives the class a clear focus for learning.` },
-      { label: "PURPOSE", icon: "TARGET", words: [second, "goal", "outcome"], example: `${topic} helps learners work toward a clear goal.` },
-      { label: "PROCESS", icon: "PATH", words: [third, "steps", "sequence"], example: `Students can follow ${topic} step by step.` },
-      { label: "EXAMPLES", icon: "TEST", words: [lead, "model", "sample"], example: `A strong example makes ${topic} easier to understand.` },
-      { label: "APPLICATION", icon: "BUILD", words: [second, "task", "practice"], example: `${topic} becomes meaningful when used in a task.` },
-      { label: "REAL LIFE", icon: "WORLD", words: [third, "daily life", "community"], example: `${topic} can be connected to home, school, and community situations.` },
-      { label: "COMMON ERRORS", icon: "WARN", words: ["confusion", "missing details", "weak explanation"], example: `Students improve ${topic} by noticing common mistakes.` },
-      { label: "REFLECTION", icon: "VIEW", words: ["insight", "growth", "improvement"], example: `Reflection strengthens understanding of ${topic}.` },
+      { label: "KEY IDEA", icon: "💡", words: [lead, "meaning", "focus"], example: `${topic} gives the class a clear focus for learning.` },
+      { label: "PURPOSE", icon: "🎯", words: [second, "goal", "outcome"], example: `${topic} helps learners work toward a clear goal.` },
+      { label: "PROCESS", icon: "🧭", words: [third, "steps", "sequence"], example: `Students can follow ${topic} step by step.` },
+      { label: "EXAMPLES", icon: "🧪", words: [lead, "model", "sample"], example: `A strong example makes ${topic} easier to understand.` },
+      { label: "APPLICATION", icon: "🛠", words: [second, "task", "practice"], example: `${topic} becomes meaningful when used in a task.` },
+      { label: "REAL LIFE", icon: "🌍", words: [third, "daily life", "community"], example: `${topic} can be connected to home, school, and community situations.` },
+      { label: "COMMON ERRORS", icon: "⚠", words: ["confusion", "missing details", "weak explanation"], example: `Students improve ${topic} by noticing common mistakes.` },
+      { label: "REFLECTION", icon: "🔍", words: ["insight", "growth", "improvement"], example: `Reflection strengthens understanding of ${topic}.` },
     ],
     application: {
       title: "Let's Practice!",
       wordBox: keywords,
-      items: [
-        `${topic} helps students understand __________ more clearly.`,
-        `A strong example of ${topic} should include a clear __________.`,
-        `Learners use ${topic} during guided __________.`,
-        `${topic} becomes useful when connected to real-life __________.`,
-        `Reflection helps students improve their understanding of __________.`,
-      ],
+      items: pickByDetail(
+        detailLevel,
+        [
+          `${topic} helps students understand __________ more clearly.`,
+          `A strong example of ${topic} should include a clear __________.`,
+          `${topic} becomes useful in real-life __________.`,
+          `Reflection helps students improve their understanding of __________.`,
+        ],
+        [
+          `${topic} helps students understand __________ more clearly.`,
+          `A strong example of ${topic} should include a clear __________.`,
+          `Learners use ${topic} during guided __________.`,
+          `${topic} becomes useful when connected to real-life __________.`,
+          `Reflection helps students improve their understanding of __________.`,
+        ],
+        [
+          `${topic} helps students understand __________ more clearly.`,
+          `A strong example of ${topic} should include a clear __________.`,
+          `Learners use ${topic} during guided __________.`,
+          `${topic} becomes useful when connected to real-life __________.`,
+          `Reflection helps students improve their understanding of __________.`,
+        ]
+      ),
+    },
+    extend: {
+      title: "Extend the Learning",
+      subtitle: "7E's - EXTEND | Transfer the concept to a new situation",
+      prompt: `How can learners apply ${topic} beyond today's activity?`,
+      body: pickByDetail(
+        detailLevel,
+        `Ask students to connect ${topic} to a different subject, a home situation, or a short real-world example.`,
+        `Ask students to connect ${topic} to a different subject, a home situation, or a short real-world example so they can see how the concept transfers beyond the first task.`,
+        `Ask students to connect ${topic} to a different subject, a home situation, or a short real-world example. This helps them transfer the idea, compare contexts, and explain why the concept still matters.`
+      ),
     },
     assessment: [
       { points: 2, question: `What is the main idea of ${topic}?` },
@@ -627,6 +899,7 @@ export default function App() {
     gradeLevel: "8",
     quarter: "First Quarter",
     framework: "fourAs",
+    detailLevel: "balanced",
     template: "classroom",
     palette: "rainbow",
     competency: "",
@@ -634,6 +907,12 @@ export default function App() {
     objSkills: "",
     objAttitude: "",
     extraContext: "",
+    images: {
+      title: "",
+      activity: "",
+      concept: "",
+      closing: "",
+    },
   });
 
   const [status, setStatus] = useState("idle");
@@ -653,6 +932,7 @@ export default function App() {
   ];
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const setImage = (slot, value) => setForm((f) => ({ ...f, images: { ...f.images, [slot]: value } }));
   const canGoNext = currentStep === 0
     ? Boolean(form.topic.trim() && form.subject.trim())
     : currentStep === 1
@@ -673,6 +953,17 @@ export default function App() {
     setErrorMsg("");
     setCurrentStep((step) => Math.max(step - 1, 0));
   };
+
+  async function handleImageChange(slot, event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setImage(slot, "");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setImage(slot, `${reader.result}`);
+    reader.readAsDataURL(file);
+  }
 
   async function handleGenerate() {
     if (!form.topic.trim()) {
@@ -897,8 +1188,25 @@ export default function App() {
     .choice-text{font-size:12px;color:#6B7280;font-weight:600;line-height:1.4}
     .swatch-row{display:flex;gap:6px;margin-top:10px}
     .swatch{width:18px;height:18px;border-radius:999px;border:1px solid #ffffffaa;box-shadow:4px 4px 8px rgba(167,178,203,.15),-4px -4px 8px rgba(255,255,255,.94)}
+    .upload-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .upload-card{
+      border:1px solid rgba(255,255,255,.78);border-radius:22px;padding:16px;background:linear-gradient(145deg,#f0f4ff,#ffffff);
+      box-shadow:10px 10px 18px rgba(167,178,203,.16),-10px -10px 18px rgba(255,255,255,.96)
+    }
+    .upload-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .upload-title{font-size:14px;font-weight:800;color:#111827}
+    .upload-note{font-size:12px;color:#6B7280;font-weight:600;line-height:1.4}
+    .upload-card input[type="file"]{width:100%;margin-top:10px}
+    .upload-preview{
+      margin-top:12px;height:120px;border-radius:18px;background:linear-gradient(145deg,#edf2ff,#f9fbff);
+      display:flex;align-items:center;justify-content:center;border:1px dashed rgba(124,58,237,.28);overflow:hidden;
+      box-shadow:inset 6px 6px 12px rgba(189,199,225,.22),inset -6px -6px 12px rgba(255,255,255,.88)
+    }
+    .upload-preview img{width:100%;height:100%;object-fit:cover}
+    .upload-placeholder{font-size:12px;font-weight:800;color:#7C3AED;letter-spacing:.06em;text-transform:uppercase}
     @media(max-width:600px){.grid-2{grid-template-columns:1fr}}
     @media(max-width:600px){.choice-grid{grid-template-columns:1fr}}
+    @media(max-width:600px){.upload-grid{grid-template-columns:1fr}}
     @media(max-width:900px){.wizard-shell{grid-template-columns:1fr}.wizard-rail{padding:14px}.wizard-main{padding:22px}.summary-grid{grid-template-columns:1fr}}
   `;
 
@@ -1036,11 +1344,54 @@ export default function App() {
                           ))}
                         </div>
                       </div>
+                      <div className="field">
+                        <label>Optional Visuals</label>
+                        <div className="upload-grid">
+                          {[
+                            ["title", "Title slide image"],
+                            ["activity", "Activity slide image"],
+                            ["concept", "Concept/definition image"],
+                            ["closing", "Closing slide image"],
+                          ].map(([slot, label]) => (
+                            <div key={slot} className="upload-card">
+                              <div className="upload-head">
+                                <div className="upload-title">{label}</div>
+                                <div className="tag">{form.images[slot] ? "Added" : "Placeholder"}</div>
+                              </div>
+                              <div className="upload-note">Upload an image for this slot or leave it blank and the slide will show a themed placeholder frame.</div>
+                              <input type="file" accept="image/*" onChange={(e) => handleImageChange(slot, e)} />
+                              <div className="upload-preview">
+                                {form.images[slot] ? (
+                                  <img src={form.images[slot]} alt={label} />
+                                ) : (
+                                  <div className="upload-placeholder">Placeholder</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </>
                   )}
 
                   {currentStep === 2 && (
                     <>
+                      <div className="field">
+                        <label>Content Density</label>
+                        <div className="choice-grid">
+                          {Object.entries(DETAIL_OPTIONS).map(([key, option]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              className={`choice-btn ${form.detailLevel === key ? "active" : ""}`}
+                              onClick={() => set("detailLevel", key)}
+                            >
+                              <div className="choice-title">{option.label}</div>
+                              <div className="choice-text">{option.description}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div className="field">
                         <label>Knowledge Objective <span className="tag">Optional - generator will draft if blank</span></label>
                         <input
@@ -1095,6 +1446,10 @@ export default function App() {
                         <div className="summary-value">{FRAMEWORK_OPTIONS[form.framework].label} • {FRAMEWORK_OPTIONS[form.framework].description}</div>
                       </div>
                       <div className="summary-card">
+                        <div className="summary-label">Density</div>
+                        <div className="summary-value">{DETAIL_OPTIONS[form.detailLevel].label}</div>
+                      </div>
+                      <div className="summary-card">
                         <div className="summary-label">Competency</div>
                         <div className="summary-value">{form.competency || "Generator will create a default competency note."}</div>
                       </div>
@@ -1111,6 +1466,10 @@ export default function App() {
                       <div className="summary-card">
                         <div className="summary-label">Extra Context</div>
                         <div className="summary-value">{form.extraContext || "No extra notes."}</div>
+                      </div>
+                      <div className="summary-card">
+                        <div className="summary-label">Visuals</div>
+                        <div className="summary-value">{Object.values(form.images).filter(Boolean).length} uploaded image slot(s)</div>
                       </div>
                     </div>
                   )}
