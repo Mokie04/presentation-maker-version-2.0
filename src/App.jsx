@@ -24,13 +24,135 @@ const P = {
   black: "111111",
 };
 
-const ACCENTS = [P.purple, P.blue, P.teal, P.green, P.orange, P.pink, P.yellow, P.red];
-const LIGHTS = [P.purpleL, P.blueL, P.tealL, P.greenL, P.orangeL, P.pinkL, P.yellowL, P.redL];
+const PALETTES = {
+  rainbow: {
+    label: "Rainbow",
+    preview: ["#7C3AED", "#2563EB", "#0891B2", "#EA580C"],
+    colors: {
+      ...P,
+      dark: "1E1B4B",
+      offWhite: "F8F7FF",
+    },
+  },
+  ocean: {
+    label: "Ocean",
+    preview: ["#0F4C81", "#0891B2", "#06B6D4", "#14B8A6"],
+    colors: {
+      purple: "0F4C81",
+      purpleL: "DBEAFE",
+      blue: "0369A1",
+      blueL: "E0F2FE",
+      teal: "0F766E",
+      tealL: "CCFBF1",
+      green: "0F766E",
+      greenL: "D1FAE5",
+      orange: "0284C7",
+      orangeL: "E0F2FE",
+      pink: "14B8A6",
+      pinkL: "CCFBF1",
+      yellow: "0EA5E9",
+      yellowL: "E0F2FE",
+      red: "155E75",
+      redL: "CFFAFE",
+      dark: "082F49",
+      white: "FFFFFF",
+      offWhite: "F3FBFF",
+      black: "0F172A",
+    },
+  },
+  forest: {
+    label: "Forest",
+    preview: ["#166534", "#65A30D", "#0F766E", "#CA8A04"],
+    colors: {
+      purple: "166534",
+      purpleL: "DCFCE7",
+      blue: "3F6212",
+      blueL: "ECFCCB",
+      teal: "0F766E",
+      tealL: "CCFBF1",
+      green: "15803D",
+      greenL: "D1FAE5",
+      orange: "CA8A04",
+      orangeL: "FEF9C3",
+      pink: "4D7C0F",
+      pinkL: "ECFCCB",
+      yellow: "A16207",
+      yellowL: "FEF3C7",
+      red: "B45309",
+      redL: "FFEDD5",
+      dark: "052E16",
+      white: "FFFFFF",
+      offWhite: "F7FDF7",
+      black: "111827",
+    },
+  },
+  sunset: {
+    label: "Sunset",
+    preview: ["#B91C1C", "#EA580C", "#F59E0B", "#EC4899"],
+    colors: {
+      purple: "B91C1C",
+      purpleL: "FEE2E2",
+      blue: "C2410C",
+      blueL: "FFEDD5",
+      teal: "EA580C",
+      tealL: "FFEDD5",
+      green: "D97706",
+      greenL: "FEF3C7",
+      orange: "F59E0B",
+      orangeL: "FEF3C7",
+      pink: "EC4899",
+      pinkL: "FCE7F3",
+      yellow: "FB7185",
+      yellowL: "FFE4E6",
+      red: "BE123C",
+      redL: "FFE4E6",
+      dark: "431407",
+      white: "FFFFFF",
+      offWhite: "FFF7ED",
+      black: "1F2937",
+    },
+  },
+};
+
+const TEMPLATE_OPTIONS = {
+  classroom: {
+    label: "Classroom",
+    description: "Bright lesson slides with balanced cards and clear labels.",
+    badge: "Balanced",
+    heroTone: "AUTO-BUILT",
+    titleWords: ["SPARK", "LEARN", "GROW"],
+    cardTransparency: 82,
+    titleQuoteLabel: "Quote",
+  },
+  playful: {
+    label: "Playful",
+    description: "More energetic accents and a more lively title slide.",
+    badge: "Energetic",
+    heroTone: "FUN MODE",
+    titleWords: ["PLAY", "MAKE", "SHINE"],
+    cardTransparency: 76,
+    titleQuoteLabel: "Class Motto",
+  },
+  formal: {
+    label: "Formal",
+    description: "Cleaner academic styling for reports and polished lessons.",
+    badge: "Polished",
+    heroTone: "PRESENTATION",
+    titleWords: ["FOCUS", "STRUCTURE", "RESULT"],
+    cardTransparency: 88,
+    titleQuoteLabel: "Key Thought",
+  },
+};
 
 function buildPptx(data) {
   const pres = new PptxGenJS();
   pres.layout = "LAYOUT_16x9";
   pres.title = data.topic;
+  const template = TEMPLATE_OPTIONS[data.template] || TEMPLATE_OPTIONS.classroom;
+  const theme = PALETTES[data.palette] || PALETTES.rainbow;
+  const P = theme.colors;
+  const ACCENTS = [P.purple, P.blue, P.teal, P.green, P.orange, P.pink, P.yellow, P.red];
+  const LIGHTS = [P.purpleL, P.blueL, P.tealL, P.greenL, P.orangeL, P.pinkL, P.yellowL, P.redL];
 
   function hdr(slide, title, sub, bg) {
     const c = bg || P.purple;
@@ -50,7 +172,7 @@ function buildPptx(data) {
   }
 
   function card(slide, x, y, w, h, col, light) {
-    slide.addShape(pres.shapes.RECTANGLE, { x: x + 0.06, y: y + 0.06, w, h, fill: { color: col, transparency: 82 }, line: { color: col, transparency: 82 } });
+    slide.addShape(pres.shapes.RECTANGLE, { x: x + 0.06, y: y + 0.06, w, h, fill: { color: col, transparency: template.cardTransparency }, line: { color: col, transparency: template.cardTransparency } });
     slide.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { color: light || P.white }, line: { color: col, pt: 2.5 } });
     slide.addShape(pres.shapes.RECTANGLE, { x, y, w, h: 0.09, fill: { color: col }, line: { color: col } });
   }
@@ -75,7 +197,7 @@ function buildPptx(data) {
     });
     sl.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 4.1, w: 9, h: 0.7, fill: { color: P.white, transparency: 85 }, line: { color: P.white, transparency: 80 } });
     sl.addText(`"${data.tagline || "Words are bridges - they carry meaning from one mind to another."}"`, { x: 0.65, y: 4.14, w: 8.7, h: 0.62, fontSize: 12.5, color: P.white, italic: true, valign: "middle", margin: 0 });
-    ["STAR", "SPARK", "LIGHT"].forEach((s, i) => sl.addText(s, { x: 0.3 + i * 3.1, y: 5.0, w: 1.8, h: 0.3, fontSize: 9, color: P.white, bold: true, align: "center", valign: "middle", margin: 0 }));
+    template.titleWords.forEach((s, i) => sl.addText(s, { x: 0.3 + i * 3.1, y: 5.0, w: 1.8, h: 0.3, fontSize: 9, color: P.white, bold: true, align: "center", valign: "middle", margin: 0 }));
   }
 
   {
@@ -243,7 +365,7 @@ function buildPptx(data) {
     [[9.5, 0.2, P.yellow], [8.8, 0.8, P.pink], [9.2, 1.5, P.teal], [8.5, 2.1, P.orange], [9.4, 3.0, P.purple], [8.7, 3.6, P.green], [9.1, 4.3, P.blue], [8.5, 5.0, P.red]]
       .forEach(([x, y, c]) => sl.addShape(pres.shapes.OVAL, { x, y, w: 0.28, h: 0.28, fill: { color: c, transparency: 40 }, line: { color: c, transparency: 40 } }));
     sl.addShape(pres.shapes.RECTANGLE, { x: 0.38, y: 0.35, w: 8.88, h: 2.35, fill: { color: P.purple, transparency: 82 }, line: { color: P.purple, transparency: 60 } });
-    sl.addText("Quote", { x: 0.42, y: 0.38, w: 0.8, h: 1.2, fontSize: 22, color: P.purpleL, bold: true, margin: 0 });
+    sl.addText(template.titleQuoteLabel, { x: 0.42, y: 0.38, w: 1.3, h: 1.2, fontSize: 22, color: P.purpleL, bold: true, margin: 0 });
     sl.addText(data.closingQuote || "Great writing is not accidental - it is built, bridge by bridge, with the right words.", { x: 1.05, y: 0.5, w: 8, h: 1.55, fontSize: 22, color: P.white, italic: true, margin: 0 });
     sl.addShape(pres.shapes.LINE, { x: 0.38, y: 2.9, w: 8.88, h: 0, line: { color: "888888", width: 1 } });
     sl.addText("Key Takeaways:", { x: 0.38, y: 3.05, w: 8.88, h: 0.38, fontSize: 15, bold: true, color: P.yellowL, margin: 0 });
@@ -284,6 +406,10 @@ function createLocalLessonData(form) {
   const subject = form.subject || "English";
   const gradeLevel = form.gradeLevel || "8";
   const quarter = form.quarter || "First Quarter";
+  const template = form.template || "classroom";
+  const palette = form.palette || "rainbow";
+  const templateConfig = TEMPLATE_OPTIONS[template] || TEMPLATE_OPTIONS.classroom;
+  const paletteConfig = PALETTES[palette] || PALETTES.rainbow;
   const keywords = buildTopicKeywords(topic);
   const lead = keywords[0] || "Concept";
   const second = keywords[1] || "Process";
@@ -294,8 +420,11 @@ function createLocalLessonData(form) {
     subject,
     gradeLevel,
     quarter,
+    template,
+    palette,
+    themeLabel: paletteConfig.label,
     competency: form.competency || `Students build understanding and practical use of ${topic} through explanation, examples, and application tasks.`,
-    tagline: `${topic} becomes stronger when students understand it, practice it, and apply it with purpose.`,
+    tagline: `${topic} becomes stronger when students understand it, practice it, and apply it with purpose in the ${templateConfig.label.toLowerCase()} template.`,
     objectives: {
       knowledge: form.objKnowledge || `Explain the meaning, purpose, and important ideas related to ${topic}.`,
       skills: form.objSkills || `Apply what was learned about ${topic} in guided and independent activities.`,
@@ -390,6 +519,8 @@ export default function App() {
     subject: "English",
     gradeLevel: "8",
     quarter: "First Quarter",
+    template: "classroom",
+    palette: "rainbow",
     competency: "",
     objKnowledge: "",
     objSkills: "",
@@ -511,7 +642,15 @@ export default function App() {
     .error-title{font-size:15px;font-weight:800;color:#DC2626;margin-bottom:4px}
     .error-msg{font-size:13px;color:#7F1D1D;font-weight:600}
     .tag{display:inline-block;background:#7C3AED18;color:#7C3AED;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:800}
+    .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .choice-btn{border:2px solid #E5E7EB;border-radius:18px;padding:14px;background:#FFFFFF;cursor:pointer;text-align:left;transition:all .2s}
+    .choice-btn.active{border-color:#7C3AED;box-shadow:0 0 0 4px #7C3AED15;transform:translateY(-1px)}
+    .choice-title{font-size:14px;font-weight:800;color:#111827;margin-bottom:4px}
+    .choice-text{font-size:12px;color:#6B7280;font-weight:600;line-height:1.4}
+    .swatch-row{display:flex;gap:6px;margin-top:10px}
+    .swatch{width:18px;height:18px;border-radius:999px;border:1px solid #ffffffaa;box-shadow:0 0 0 1px #E5E7EB}
     @media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+    @media(max-width:600px){.choice-grid{grid-template-columns:1fr}}
   `;
 
   const slideLabels = [
@@ -533,7 +672,7 @@ export default function App() {
       <style>{styles}</style>
       <div className="app">
         <div className="hero">
-          <div className="hero-badge">AUTO-BUILT</div>
+          <div className="hero-badge">{TEMPLATE_OPTIONS[form.template].heroTone}</div>
           <h1 className="hero-title">Lesson <span>Presentation</span> Generator</h1>
           <p className="hero-sub">Built for the MATATAG Curriculum. Fill in your lesson details and get a colorful, ready-to-use PowerPoint in seconds.</p>
         </div>
@@ -576,6 +715,44 @@ export default function App() {
                 value={form.competency}
                 onChange={(e) => set("competency", e.target.value)}
               />
+            </div>
+
+            <div className="section-title" style={{ marginTop: 8 }}>Design Setup</div>
+            <div className="field">
+              <label>Template</label>
+              <div className="choice-grid">
+                {Object.entries(TEMPLATE_OPTIONS).map(([key, option]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`choice-btn ${form.template === key ? "active" : ""}`}
+                    onClick={() => set("template", key)}
+                  >
+                    <div className="choice-title">{option.label}</div>
+                    <div className="choice-text">{option.description}</div>
+                    <div className="tag" style={{ marginTop: 10 }}>{option.badge}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>Color Palette</label>
+              <div className="choice-grid">
+                {Object.entries(PALETTES).map(([key, option]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`choice-btn ${form.palette === key ? "active" : ""}`}
+                    onClick={() => set("palette", key)}
+                  >
+                    <div className="choice-title">{option.label}</div>
+                    <div className="choice-text">Applies this palette to title, content cards, and closing slides.</div>
+                    <div className="swatch-row">
+                      {option.preview.map((color) => <span key={color} className="swatch" style={{ background: color }} />)}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="section-title" style={{ marginTop: 8 }}>Learning Objectives</div>
@@ -651,7 +828,7 @@ export default function App() {
               <div className="success-icon">DONE</div>
               <div className="success-title">Your Presentation is Ready</div>
               <div className="success-sub">
-                <strong>{generatedData?.topic}</strong> - Grade {generatedData?.gradeLevel} {generatedData?.subject} - {slideLabels.length} Slides
+                <strong>{generatedData?.topic}</strong> - Grade {generatedData?.gradeLevel} {generatedData?.subject} - {generatedData?.themeLabel} palette - {slideLabels.length} Slides
               </div>
               <div className="preview-grid">
                 {slideLabels.map((slide, index) => (
