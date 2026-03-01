@@ -144,12 +144,115 @@ const TEMPLATE_OPTIONS = {
   },
 };
 
+const FRAMEWORK_OPTIONS = {
+  fourAs: {
+    label: "4A's",
+    description: "Activity, Analysis, Abstraction, Application",
+  },
+  fiveEs: {
+    label: "5E's",
+    description: "Engage, Explore, Explain, Elaborate, Evaluate",
+  },
+  sevenEs: {
+    label: "7E's",
+    description: "Elicit, Engage, Explore, Explain, Elaborate, Evaluate, Extend",
+  },
+};
+
+function getFrameworkContent(frameworkKey) {
+  switch (frameworkKey) {
+    case "fiveEs":
+      return {
+        objectivesSub: "5E's - ENGAGE | Set purpose and learning targets",
+        activitySub: (duration) => `5E's - EXPLORE | ${duration} | Hands-on discovery`,
+        analysisSub: "5E's - EXPLORE | Observe, compare, and investigate",
+        definitionSub: "5E's - EXPLAIN | Clarify the key concept",
+        conceptsSub: (part) => `5E's - EXPLAIN | Deepen understanding (${part} of 2)`,
+        applicationSub: "5E's - ELABORATE | Independent practice | 5 Minutes",
+        assessmentTitle: "Evaluate Understanding",
+        assessmentSub: "5E's - EVALUATE | 5 Minutes | Answer independently!",
+      };
+    case "sevenEs":
+      return {
+        objectivesSub: "7E's - ELICIT | Surface prior ideas and targets",
+        activitySub: (duration) => `7E's - ENGAGE | ${duration} | Spark curiosity`,
+        analysisSub: "7E's - EXPLORE | Compare, investigate, and discuss",
+        definitionSub: "7E's - EXPLAIN | Name and clarify the concept",
+        conceptsSub: (part) => `7E's - ELABORATE | Build understanding (${part} of 2)`,
+        applicationSub: "7E's - EXTEND | Apply learning in a new task | 5 Minutes",
+        assessmentTitle: "Evaluate and Reflect",
+        assessmentSub: "7E's - EVALUATE | 5 Minutes | Show what you learned!",
+      };
+    case "fourAs":
+    default:
+      return {
+        objectivesSub: "By the end of this lesson, YOU will be able to...",
+        activitySub: (duration) => `4A's - Phase 1: ACTIVITY | ${duration} | Group Work`,
+        analysisSub: "4A's - Phase 2: ANALYSIS | Compare and observe!",
+        definitionSub: "4A's - Phase 3: ABSTRACTION | The Key Concept",
+        conceptsSub: (part) => `4A's - Phase 3: ABSTRACTION | (${part} of 2)`,
+        applicationSub: "4A's - Phase 4: APPLICATION | Individual Activity | 5 Minutes",
+        assessmentTitle: "Formative Assessment",
+        assessmentSub: "4A's checkpoint | 5 Minutes | Answer independently!",
+      };
+  }
+}
+
+function getSlideLabels(frameworkKey) {
+  switch (frameworkKey) {
+    case "fiveEs":
+      return [
+        { icon: "1", label: "Title" },
+        { icon: "2", label: "Engage" },
+        { icon: "3", label: "Explore" },
+        { icon: "4", label: "Explore 2" },
+        { icon: "5", label: "Explain" },
+        { icon: "6", label: "Explain 2" },
+        { icon: "7", label: "Explain 3" },
+        { icon: "8", label: "Elaborate" },
+        { icon: "9", label: "Evaluate" },
+        { icon: "10", label: "Assignment" },
+        { icon: "11", label: "Closing" },
+      ];
+    case "sevenEs":
+      return [
+        { icon: "1", label: "Title" },
+        { icon: "2", label: "Elicit" },
+        { icon: "3", label: "Engage" },
+        { icon: "4", label: "Explore" },
+        { icon: "5", label: "Explain" },
+        { icon: "6", label: "Elaborate" },
+        { icon: "7", label: "Elaborate 2" },
+        { icon: "8", label: "Extend" },
+        { icon: "9", label: "Evaluate" },
+        { icon: "10", label: "Assignment" },
+        { icon: "11", label: "Closing" },
+      ];
+    case "fourAs":
+    default:
+      return [
+        { icon: "1", label: "Title" },
+        { icon: "2", label: "Objectives" },
+        { icon: "3", label: "Activity" },
+        { icon: "4", label: "Analysis" },
+        { icon: "5", label: "Definition" },
+        { icon: "6", label: "Concepts 1" },
+        { icon: "7", label: "Concepts 2" },
+        { icon: "8", label: "Practice" },
+        { icon: "9", label: "Assessment" },
+        { icon: "10", label: "Assignment" },
+        { icon: "11", label: "Closing" },
+      ];
+  }
+}
+
 function buildPptx(data) {
   const pres = new PptxGenJS();
   pres.layout = "LAYOUT_16x9";
   pres.title = data.topic;
   const template = TEMPLATE_OPTIONS[data.template] || TEMPLATE_OPTIONS.classroom;
   const theme = PALETTES[data.palette] || PALETTES.rainbow;
+  const framework = getFrameworkContent(data.framework);
   const P = theme.colors;
   const ACCENTS = [P.purple, P.blue, P.teal, P.green, P.orange, P.pink, P.yellow, P.red];
   const LIGHTS = [P.purpleL, P.blueL, P.tealL, P.greenL, P.orangeL, P.pinkL, P.yellowL, P.redL];
@@ -202,7 +305,7 @@ function buildPptx(data) {
 
   {
     const sl = pres.addSlide();
-    hdr(sl, "Learning Objectives", "By the end of this lesson, YOU will be able to...", P.purple);
+    hdr(sl, "Learning Objectives", framework.objectivesSub, P.purple);
     [
       { letter: "A", label: "KNOWLEDGE", icon: "BRAIN", text: data.objectives.knowledge, col: P.purple, lt: P.purpleL },
       { letter: "B", label: "SKILLS", icon: "WRITE", text: data.objectives.skills, col: P.blue, lt: P.blueL },
@@ -222,7 +325,7 @@ function buildPptx(data) {
   {
     const sl = pres.addSlide();
     const act = data.activity;
-    hdr(sl, `Activity: ${act.title}`, `4A's - Phase 1: ACTIVITY | ${act.duration} | Group Work`, P.orange);
+    hdr(sl, `Activity: ${act.title}`, framework.activitySub(act.duration), P.orange);
     badge(sl, 0.35, 1.47, `TIME ${act.duration}`, P.orange);
     badge(sl, 2.18, 1.47, "GROUP WORK", P.purple);
     card(sl, 0.35, 1.9, 5.65, 3.2, P.orange, P.orangeL);
@@ -243,7 +346,7 @@ function buildPptx(data) {
   {
     const sl = pres.addSlide();
     const ana = data.analysis;
-    hdr(sl, ana.title, "4A's - Phase 2: ANALYSIS | Compare and observe!", P.teal);
+    hdr(sl, ana.title, framework.analysisSub, P.teal);
     sl.addText(ana.prompt || "Read both versions carefully. What's different?", { x: 0.35, y: 1.45, w: 9.3, h: 0.28, fontSize: 12, color: P.teal, italic: true, margin: 0 });
     card(sl, 0.35, 1.8, 4.42, 3.26, P.red, P.redL);
     sl.addShape(pres.shapes.RECTANGLE, { x: 0.35, y: 1.8, w: 4.42, h: 0.52, fill: { color: P.red }, line: { color: P.red } });
@@ -265,7 +368,7 @@ function buildPptx(data) {
   {
     const sl = pres.addSlide();
     const def = data.definition;
-    hdr(sl, def.title, "4A's - Phase 3: ABSTRACTION | The Key Concept", P.purple);
+    hdr(sl, def.title, framework.definitionSub, P.purple);
     sl.addShape(pres.shapes.RECTANGLE, { x: 0.35, y: 1.5, w: 9.3, h: 1.62, fill: { color: P.purple }, line: { color: P.purple } });
     sl.addText("Definition", { x: 0.55, y: 1.6, w: 9, h: 0.35, fontSize: 12, bold: true, color: P.purpleL, margin: 0 });
     sl.addText(def.text, { x: 0.55, y: 1.95, w: 9, h: 1.05, fontSize: 13, color: P.white, margin: 0 });
@@ -283,7 +386,7 @@ function buildPptx(data) {
   [[0, 4], [4, 8]].forEach(([start, end], slideIdx) => {
     const sl = pres.addSlide();
     const colSet = slideIdx === 0 ? P.blue : P.pink;
-    hdr(sl, `Key Concepts - Part ${slideIdx + 1}`, `4A's - Phase 3: ABSTRACTION | (${slideIdx + 1} of 2)`, colSet);
+    hdr(sl, `Key Concepts - Part ${slideIdx + 1}`, framework.conceptsSub(slideIdx + 1), colSet);
     concepts.slice(start, end).forEach((c, i) => {
       const col = i % 2;
       const row = Math.floor(i / 2);
@@ -303,7 +406,7 @@ function buildPptx(data) {
   {
     const sl = pres.addSlide();
     const app = data.application;
-    hdr(sl, app.title, "4A's - Phase 4: APPLICATION | Individual Activity | 5 Minutes", P.orange);
+    hdr(sl, app.title, framework.applicationSub, P.orange);
     badge(sl, 0.35, 1.47, "INDIVIDUAL", P.orange);
     badge(sl, 2.18, 1.47, "5 MINUTES", P.red);
     const wb = app.wordBox || [];
@@ -326,7 +429,7 @@ function buildPptx(data) {
   {
     const sl = pres.addSlide();
     const qs = data.assessment || [];
-    hdr(sl, "Formative Assessment", "5 Minutes | Answer independently!", P.red);
+    hdr(sl, framework.assessmentTitle, framework.assessmentSub, P.red);
     sl.addText("Answer on your own. No looking at seatmates.", { x: 0.35, y: 1.47, w: 9.3, h: 0.3, fontSize: 12, color: P.red, italic: true, margin: 0 });
     qs.forEach((q, i) => {
       const y = 1.85 + i * 0.88;
@@ -406,6 +509,8 @@ function createLocalLessonData(form) {
   const subject = form.subject || "English";
   const gradeLevel = form.gradeLevel || "8";
   const quarter = form.quarter || "First Quarter";
+  const framework = form.framework || "fourAs";
+  const frameworkLabel = FRAMEWORK_OPTIONS[framework]?.label || "4A's";
   const template = form.template || "classroom";
   const palette = form.palette || "rainbow";
   const templateConfig = TEMPLATE_OPTIONS[template] || TEMPLATE_OPTIONS.classroom;
@@ -420,6 +525,8 @@ function createLocalLessonData(form) {
     subject,
     gradeLevel,
     quarter,
+    framework,
+    frameworkLabel,
     template,
     palette,
     themeLabel: paletteConfig.label,
@@ -519,6 +626,7 @@ export default function App() {
     subject: "English",
     gradeLevel: "8",
     quarter: "First Quarter",
+    framework: "fourAs",
     template: "classroom",
     palette: "rainbow",
     competency: "",
@@ -794,19 +902,7 @@ export default function App() {
     @media(max-width:900px){.wizard-shell{grid-template-columns:1fr}.wizard-rail{padding:14px}.wizard-main{padding:22px}.summary-grid{grid-template-columns:1fr}}
   `;
 
-  const slideLabels = [
-    { icon: "1", label: "Title" },
-    { icon: "2", label: "Objectives" },
-    { icon: "3", label: "Activity" },
-    { icon: "4", label: "Analysis" },
-    { icon: "5", label: "Definition" },
-    { icon: "6", label: "Concepts 1" },
-    { icon: "7", label: "Concepts 2" },
-    { icon: "8", label: "Practice" },
-    { icon: "9", label: "Assessment" },
-    { icon: "10", label: "Assignment" },
-    { icon: "11", label: "Closing" },
-  ];
+  const slideLabels = getSlideLabels(generatedData?.framework || form.framework);
 
   return (
     <>
@@ -882,6 +978,22 @@ export default function App() {
                           value={form.competency}
                           onChange={(e) => set("competency", e.target.value)}
                         />
+                      </div>
+                      <div className="field">
+                        <label>Instructional Framework</label>
+                        <div className="choice-grid">
+                          {Object.entries(FRAMEWORK_OPTIONS).map(([key, option]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              className={`choice-btn ${form.framework === key ? "active" : ""}`}
+                              onClick={() => set("framework", key)}
+                            >
+                              <div className="choice-title">{option.label}</div>
+                              <div className="choice-text">{option.description}</div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </>
                   )}
@@ -979,6 +1091,10 @@ export default function App() {
                         <div className="summary-value">{TEMPLATE_OPTIONS[form.template].label} • {PALETTES[form.palette].label}</div>
                       </div>
                       <div className="summary-card">
+                        <div className="summary-label">Framework</div>
+                        <div className="summary-value">{FRAMEWORK_OPTIONS[form.framework].label} • {FRAMEWORK_OPTIONS[form.framework].description}</div>
+                      </div>
+                      <div className="summary-card">
                         <div className="summary-label">Competency</div>
                         <div className="summary-value">{form.competency || "Generator will create a default competency note."}</div>
                       </div>
@@ -1051,7 +1167,7 @@ export default function App() {
               <div className="success-icon">DONE</div>
               <div className="success-title">Your Presentation is Ready</div>
               <div className="success-sub">
-                <strong>{generatedData?.topic}</strong> - Grade {generatedData?.gradeLevel} {generatedData?.subject} - {generatedData?.themeLabel} palette - {slideLabels.length} Slides
+                <strong>{generatedData?.topic}</strong> - {generatedData?.frameworkLabel} - Grade {generatedData?.gradeLevel} {generatedData?.subject} - {generatedData?.themeLabel} palette - {slideLabels.length} Slides
               </div>
               <div className="preview-grid">
                 {slideLabels.map((slide, index) => (
