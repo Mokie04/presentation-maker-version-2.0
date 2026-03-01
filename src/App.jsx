@@ -661,6 +661,188 @@ function buildTopicKeywords(topic) {
   return [...unique.slice(0, 5), ...fallback].slice(0, 5);
 }
 
+function normalizeSubject(subject) {
+  const value = `${subject}`.toLowerCase();
+  if (value.includes("english")) return "english";
+  if (value.includes("filipino")) return "filipino";
+  if (value.includes("science")) return "science";
+  if (value.includes("math")) return "math";
+  if (value.includes("araling")) return "ap";
+  if (value.includes("history")) return "history";
+  if (value.includes("literature")) return "literature";
+  if (value.includes("eapp")) return "eapp";
+  return "general";
+}
+
+function getSubjectProfile(subject) {
+  const normalized = normalizeSubject(subject);
+  const common = {
+    partnerTask: "Talk with a partner",
+    studentProduct: "student output",
+    realWorld: "school and daily life",
+    misconception: "a shallow understanding of the topic",
+    strongMove: "a clearer, more purposeful use of the topic",
+    extendTask: "apply the concept in a new context",
+  };
+
+  const profiles = {
+    english: {
+      ...common,
+      focus: "communication, structure, and meaning",
+      partnerTask: "Compare how the language choices affect meaning",
+      studentProduct: "short paragraph or spoken response",
+      realWorld: "reading, writing, and communication",
+      misconception: "a sentence or paragraph that names the topic but does not use it effectively",
+      strongMove: "a revised paragraph that uses the topic purposefully and clearly",
+      extendTask: "use the topic in a fresh writing or speaking situation",
+      concepts: ["purpose", "language choice", "organization", "effect on the reader"],
+    },
+    filipino: {
+      ...common,
+      focus: "pakikipagtalastasan, kahulugan, at organisasyon ng ideya",
+      partnerTask: "Pag-usapan kung paano nakatutulong ang paksa sa mas malinaw na pagpapahayag",
+      studentProduct: "maikling talata o sagot na pasalita",
+      realWorld: "pakikipag-usap, pagbasa, at pagsulat",
+      misconception: "isang pahayag na binabanggit ang paksa ngunit hindi malinaw ang gamit nito",
+      strongMove: "isang inayos na pahayag na malinaw at makabuluhan ang gamit ng paksa",
+      extendTask: "ilapat ang paksa sa panibagong sitwasyon o teksto",
+      concepts: ["layunin", "salitang ginamit", "ayos ng ideya", "epekto sa tagapakinig o mambabasa"],
+    },
+    science: {
+      ...common,
+      focus: "evidence, explanation, and observable patterns",
+      partnerTask: "Use observations and evidence to explain the pattern you notice",
+      studentProduct: "claim-evidence-explanation response",
+      realWorld: "natural phenomena and everyday observations",
+      misconception: "an explanation that names the idea but gives no evidence or cause",
+      strongMove: "an explanation that connects the topic to evidence, cause, and effect",
+      extendTask: "apply the idea to a new phenomenon or classroom investigation",
+      concepts: ["observation", "cause", "evidence", "application"],
+    },
+    math: {
+      ...common,
+      focus: "reasoning, representation, and problem solving",
+      partnerTask: "Compare two solution paths and justify which one is more efficient",
+      studentProduct: "worked solution with explanation",
+      realWorld: "quantitative decisions and problem solving",
+      misconception: "a solution that jumps to an answer without showing the reasoning",
+      strongMove: "a solution that models the topic step by step and explains the reasoning",
+      extendTask: "solve a new problem using the same concept in a different form",
+      concepts: ["pattern", "strategy", "representation", "justification"],
+    },
+    ap: {
+      ...common,
+      focus: "context, perspective, and real-life connections",
+      partnerTask: "Connect the topic to a familiar issue in community or national life",
+      studentProduct: "short explanation with evidence or examples",
+      realWorld: "community life, citizenship, and social issues",
+      misconception: "a response that names the topic but ignores context or evidence",
+      strongMove: "a response that uses examples, context, and explanation to support the idea",
+      extendTask: "apply the concept to a new historical or community case",
+      concepts: ["context", "perspective", "evidence", "action"],
+    },
+    history: {
+      ...common,
+      focus: "context, chronology, and interpretation",
+      partnerTask: "Discuss how the topic changes when you consider time, place, and perspective",
+      studentProduct: "timeline note or short explanation",
+      realWorld: "historical interpretation and civic understanding",
+      misconception: "a statement that names the event but ignores causes or context",
+      strongMove: "an explanation that connects event, cause, and consequence",
+      extendTask: "compare the topic to a different event or time period",
+      concepts: ["cause", "effect", "context", "significance"],
+    },
+    literature: {
+      ...common,
+      focus: "interpretation, theme, and textual meaning",
+      partnerTask: "Compare how the topic changes the reader's understanding of the text",
+      studentProduct: "interpretive paragraph or spoken insight",
+      realWorld: "reading, interpretation, and personal connection",
+      misconception: "a response that repeats the text without interpreting the topic",
+      strongMove: "an interpretation that explains how the topic shapes meaning",
+      extendTask: "apply the same interpretation move to a new text or excerpt",
+      concepts: ["theme", "character", "symbol", "reader response"],
+    },
+    eapp: {
+      ...common,
+      focus: "academic communication, structure, and purpose",
+      partnerTask: "Judge how effectively the topic helps the speaker or writer communicate",
+      studentProduct: "organized academic response",
+      realWorld: "academic tasks, reporting, and presentations",
+      misconception: "a response that mentions the concept but does not use it purposefully",
+      strongMove: "a response that uses the concept to improve structure and clarity",
+      extendTask: "apply the concept to a new academic communication task",
+      concepts: ["purpose", "organization", "clarity", "audience"],
+    },
+    general: {
+      ...common,
+      focus: "understanding, application, and reflection",
+      concepts: ["main idea", "purpose", "application", "reflection"],
+    },
+  };
+
+  return profiles[normalized];
+}
+
+function buildTopicProfile(topic, subject) {
+  const keywords = buildTopicKeywords(topic);
+  const core = keywords[0] || topic.split(/\s+/)[0] || "concept";
+  const phrase = keywords.slice(0, 3).join(", ");
+  const subjectProfile = getSubjectProfile(subject);
+  return {
+    keywords,
+    core,
+    phrase,
+    subjectProfile,
+  };
+}
+
+function buildStudentObjectives(topic, profile, detailLevel, custom = {}) {
+  const knowledge = clampWords(
+    custom.knowledge || pickByDetail(
+      detailLevel,
+      `I can explain the key idea behind ${topic}.`,
+      `I can explain how ${topic} works and why it matters in ${profile.subjectProfile.focus}.`,
+      `I can explain how ${topic} works, identify its important parts, and connect it to ${profile.subjectProfile.focus}.`
+    ),
+    detailLevel === "minimal" ? 14 : detailLevel === "detailed" ? 28 : 20
+  );
+  const skills = clampWords(
+    custom.skills || pickByDetail(
+      detailLevel,
+      `I can use ${topic} in a short task.`,
+      `I can use ${topic} in a task, discussion, or response with a partner or group.`,
+      `I can use ${topic} in a task, discussion, or response and explain my choices clearly to others.`
+    ),
+    detailLevel === "minimal" ? 14 : detailLevel === "detailed" ? 28 : 20
+  );
+  const attitude = clampWords(
+    custom.attitude || pickByDetail(
+      detailLevel,
+      `I can stay curious and reflective while learning ${topic}.`,
+      `I can stay curious, listen to others, and reflect on how ${topic} helps me learn.`,
+      `I can stay curious, listen to others, and reflect on how ${topic} helps me learn, communicate, and solve problems in new situations.`
+    ),
+    detailLevel === "minimal" ? 14 : detailLevel === "detailed" ? 28 : 20
+  );
+  return { knowledge, skills, attitude };
+}
+
+function buildConceptSet(topic, profile) {
+  const [k1 = "idea", k2 = "focus", k3 = "example", k4 = "process"] = profile.keywords;
+  const focus = profile.subjectProfile.concepts;
+  return [
+    { label: "TOPIC FOCUS", icon: "💡", words: [k1, "core idea", "central meaning"], example: `${topic} asks learners to focus on the central idea, not just mention the term.` },
+    { label: "PURPOSE", icon: "🎯", words: [focus[0], "goal", "reason"], example: `${topic} becomes clearer when students know its purpose.` },
+    { label: "EVIDENCE OR SUPPORT", icon: "🧩", words: [focus[1], "support", "details"], example: `Strong work on ${topic} includes support, not just a short answer.` },
+    { label: "PROCESS", icon: "🧭", words: [k4, "steps", "flow"], example: `Students can work through ${topic} step by step.` },
+    { label: "EXAMPLE", icon: "🧪", words: [k3, "model", "sample"], example: `A clear example helps students understand ${topic} faster.` },
+    { label: "REAL-LIFE LINK", icon: "🌍", words: [profile.subjectProfile.realWorld, k2], example: `${topic} matters because it connects to ${profile.subjectProfile.realWorld}.` },
+    { label: "MISCONCEPTION", icon: "⚠", words: ["common error", "confusion", "surface answer"], example: `Students improve ${topic} when they notice surface-level mistakes early.` },
+    { label: "REFLECTION", icon: "🔍", words: ["self-check", "insight", "growth"], example: `Reflection helps students revise and improve how they use ${topic}.` },
+  ];
+}
+
 function createLocalLessonData(form) {
   const topic = form.topic.trim();
   const subject = form.subject || "English";
@@ -673,63 +855,43 @@ function createLocalLessonData(form) {
   const palette = form.palette || "rainbow";
   const templateConfig = TEMPLATE_OPTIONS[template] || TEMPLATE_OPTIONS.classroom;
   const paletteConfig = PALETTES[palette] || PALETTES.rainbow;
-  const keywords = buildTopicKeywords(topic);
-  const lead = keywords[0] || "Concept";
-  const second = keywords[1] || "Process";
-  const third = keywords[2] || "Application";
+  const profile = buildTopicProfile(topic, subject);
+  const keywords = profile.keywords;
+  const lead = profile.core;
+  const second = keywords[1] || "focus";
+  const third = keywords[2] || "example";
+  const studentObjectives = buildStudentObjectives(topic, profile, detailLevel, {
+    knowledge: form.objKnowledge,
+    skills: form.objSkills,
+    attitude: form.objAttitude,
+  });
+  const concepts = buildConceptSet(topic, profile);
   const competency = clampWords(
-    form.competency || `Students build understanding and practical use of ${topic} through explanation, examples, and application tasks.`,
+    form.competency || `Students explore ${topic} through inquiry, collaboration, and student-created responses connected to ${profile.subjectProfile.realWorld}.`,
     detailLevel === "minimal" ? 14 : detailLevel === "detailed" ? 28 : 20
-  );
-  const knowledge = clampWords(
-    form.objKnowledge || pickByDetail(
-      detailLevel,
-      `Explain the key idea of ${topic}.`,
-      `Explain the meaning, purpose, and important ideas related to ${topic}.`,
-      `Explain the meaning, purpose, and important ideas related to ${topic}, including how the concept appears in classwork and real situations.`
-    ),
-    detailLevel === "minimal" ? 12 : detailLevel === "detailed" ? 24 : 18
-  );
-  const skills = clampWords(
-    form.objSkills || pickByDetail(
-      detailLevel,
-      `Use ${topic} in guided tasks.`,
-      `Apply what was learned about ${topic} in guided and independent activities.`,
-      `Apply what was learned about ${topic} in guided and independent activities, then produce an example with clear reasoning.`
-    ),
-    detailLevel === "minimal" ? 12 : detailLevel === "detailed" ? 24 : 18
-  );
-  const attitude = clampWords(
-    form.objAttitude || pickByDetail(
-      detailLevel,
-      `Show confidence while learning ${topic}.`,
-      `Show confidence, curiosity, and responsibility while learning about ${topic}.`,
-      `Show confidence, curiosity, and responsibility while learning about ${topic}, especially during collaboration and reflection.`
-    ),
-    detailLevel === "minimal" ? 12 : detailLevel === "detailed" ? 24 : 18
   );
   const activitySteps = pickByDetail(
     detailLevel,
     [
-      `Observe the sample about ${topic}.`,
-      `Identify one idea connected to ${topic}.`,
-      "Discuss your observation with a partner.",
-      "Share one insight with the class.",
+      `Look at the prompt, example, or problem about ${topic}.`,
+      `Notice one idea, pattern, or choice connected to ${topic}.`,
+      profile.subjectProfile.partnerTask,
+      "Share one student insight with the class.",
     ],
     [
-      `Observe the sample about ${topic}.`,
-      "List the important words or ideas you notice.",
-      `Discuss why ${topic} matters in the lesson.`,
-      "Work with your group to organize your ideas.",
-      "Share one key insight with the class.",
+      `Look closely at the prompt, example, or problem about ${topic}.`,
+      `List the important words, moves, or patterns you notice in ${topic}.`,
+      `Discuss how ${topic} connects to ${profile.subjectProfile.realWorld}.`,
+      "Work with your group to organize your ideas and prepare a short share-out.",
+      "Share one key student insight with the class.",
     ],
     [
-      `Observe the sample about ${topic}.`,
-      "List the important words or ideas you notice.",
-      `Discuss why ${topic} matters in the lesson.`,
+      `Look closely at the prompt, example, or problem about ${topic}.`,
+      `List the important words, moves, or patterns you notice in ${topic}.`,
+      `Discuss how ${topic} connects to ${profile.subjectProfile.realWorld}.`,
       "Compare your observations with a classmate.",
-      "Organize your ideas as a group.",
-      "Share one key insight with the class.",
+      "Organize your ideas as a group and prepare a claim, explanation, or solution.",
+      "Share one key student insight with the class.",
     ]
   );
 
@@ -745,12 +907,17 @@ function createLocalLessonData(form) {
     palette,
     themeLabel: paletteConfig.label,
     competency,
-    tagline: `${topic} becomes stronger when students understand it, practice it, and apply it with purpose in the ${templateConfig.label.toLowerCase()} template.`,
+    tagline: pickByDetail(
+      detailLevel,
+      `${topic} becomes powerful when students test ideas, explain them, and make them their own.`,
+      `${topic} becomes meaningful when students explore it, talk through it, and apply it with purpose in the ${templateConfig.label.toLowerCase()} template.`,
+      `${topic} becomes meaningful when students explore it, talk through it, revise their thinking, and apply it with purpose in the ${templateConfig.label.toLowerCase()} template.`
+    ),
     images: form.images || {},
     objectives: {
-      knowledge,
-      skills,
-      attitude,
+      knowledge: studentObjectives.knowledge,
+      skills: studentObjectives.skills,
+      attitude: studentObjectives.attitude,
     },
     hook: {
       title: framework === "sevenEs" ? "Elicit and Engage" : "Engage the Lesson",
@@ -758,21 +925,21 @@ function createLocalLessonData(form) {
       prompt: pickByDetail(
         detailLevel,
         `What do you already know about ${topic}?`,
-        `What do you already know about ${topic}, and where have you seen it before?`,
-        `What do you already know about ${topic}, where have you seen it before, and why might it matter in this lesson?`
+        `What do you already know about ${topic}, and where have you already seen it in ${profile.subjectProfile.realWorld}?`,
+        `What do you already know about ${topic}, where have you already seen it in ${profile.subjectProfile.realWorld}, and what do you still want to figure out?`
       ),
       body: pickByDetail(
         detailLevel,
-        `Start with a short trigger question, image, or quick prompt that gets learners thinking about ${topic}.`,
-        `Start with a short trigger question, image, or quick prompt that gets learners thinking about ${topic} before they explore the lesson more deeply.`,
-        `Start with a short trigger question, image, or quick prompt that gets learners thinking about ${topic}. Ask them to connect it to prior knowledge and predict where the lesson will go next.`
+        `Start with a student prompt, image, or quick challenge that gets everyone thinking about ${topic}.`,
+        `Start with a student prompt, image, or quick challenge that gets everyone thinking about ${topic} before they explore the lesson more deeply.`,
+        `Start with a student prompt, image, or quick challenge that gets everyone thinking about ${topic}. Let students connect it to prior knowledge, predict what they will discover, and raise their own questions.`
       ),
     },
     activity: {
-      title: `Discovering ${lead}`,
+      title: `Exploring ${lead}`,
       duration: "10 Minutes",
       steps: activitySteps,
-      guideQuestion: `What makes ${topic} clear, useful, and meaningful for learners?`,
+      guideQuestion: `How can students show that they understand and can use ${topic}, not just define it?`,
       materials: pickByDetail(
         detailLevel,
         ["activity sheet", "pen or pencil"],
@@ -781,78 +948,69 @@ function createLocalLessonData(form) {
       ),
     },
     analysis: {
-      title: `Looking Closely at ${lead}`,
-      prompt: `Read both versions carefully. Which one explains ${topic} more clearly?`,
+      title: `Comparing Student Work on ${lead}`,
+      prompt: `Study both examples. Which one helps a student understand or use ${topic} more effectively?`,
       versionA: {
-        label: "Without clear support",
+        label: "Surface-level response",
         text: pickByDetail(
           detailLevel,
-          `${topic} is introduced, but the explanation is brief and unclear.`,
-          `${topic} is introduced, but the explanation is short and lacks examples. Some ideas feel disconnected. The audience may understand only part of the lesson.`,
-          `${topic} is introduced, but the explanation is short and lacks examples. Some ideas feel disconnected, and the reader cannot easily follow how the concept works in practice.`
+          `The student mentions ${topic}, but the idea stays brief and unclear.`,
+          `The student mentions ${topic}, but the response stays short and lacks evidence, explanation, or a strong example. The audience may understand only part of the idea.`,
+          `The student mentions ${topic}, but the response stays short and lacks evidence, explanation, or a strong example. The audience may understand only part of the idea, and the work does not yet show how the concept functions in practice.`
         ),
-        note: "The explanation is weak because the ideas are too limited and loosely connected.",
+        note: `This response stays at the surface and does not yet show strong ${profile.subjectProfile.focus}.`,
       },
       versionB: {
-        label: "With clear support",
+        label: "Stronger student response",
         text: pickByDetail(
           detailLevel,
-          `${topic} becomes clearer when the explanation includes a key idea and example.`,
-          `${topic} is easier to understand when the explanation includes the main idea, a clear example, and a practical classroom application.`,
-          `${topic} is easier to understand when the explanation includes the main idea, a clear example, a useful connection, and a practical classroom application that students can recognize immediately.`
+          `${topic} becomes clearer when the student gives a focused idea and a useful example.`,
+          `${topic} becomes clearer when the student gives a focused idea, a useful example, and a clear connection to the task or real situation.`,
+          `${topic} becomes clearer when the student gives a focused idea, a useful example, and a clear connection to the task or real situation. The response shows reasoning, not just recall.`
         ),
-        note: "This version is stronger because it gives a clearer flow of ideas and a useful example.",
+        note: `This response is stronger because the student makes thinking visible and uses ${topic} purposefully.`,
       },
-      discussion: `How did the clearer explanation improve understanding of ${topic}? What details made it stronger?`,
+      discussion: `What makes the second student response stronger? Which choices made ${topic} easier to notice, understand, or apply?`,
     },
     definition: {
       title: `Understanding ${topic}`,
       text: pickByDetail(
         detailLevel,
-        `${topic} helps learners understand an idea and use it in a real task.`,
-        `${topic} is a lesson focus that helps learners build knowledge, practice a skill, and connect ideas to real situations. It becomes meaningful when students can explain it clearly, identify examples, and use it in tasks.`,
-        `${topic} is a lesson focus that helps learners build knowledge, practice a skill, and connect ideas to real situations. It becomes meaningful when students can explain it clearly, identify examples, use it in tasks, and reflect on why it matters.`
+        `${topic} helps students understand an idea and use it in a real task.`,
+        `${topic} helps students build knowledge, practice a skill, and connect ideas to real situations. It matters most when learners can explain it clearly, identify examples, and use it in their own work.`,
+        `${topic} helps students build knowledge, practice a skill, and connect ideas to real situations. It matters most when learners can explain it clearly, identify examples, use it in their own work, and reflect on how their understanding changed.`
       ),
       purposes: [
-        { icon: "📘", title: "Build Knowledge", desc: `Students identify the main ideas behind ${topic}.` },
-        { icon: "🛠", title: "Use the Skill", desc: `Learners practice ${topic} through guided activities.` },
-        { icon: "⭐", title: "See the Value", desc: `${topic} becomes useful when linked to real-life situations.` },
+        { icon: "📘", title: "Build Understanding", desc: `Students identify the main ideas behind ${topic}.` },
+        { icon: "🛠", title: "Try It Out", desc: `Learners use ${topic} in discussion, problem solving, or creation.` },
+        { icon: "⭐", title: "Make It Matter", desc: `${topic} becomes meaningful when learners connect it to ${profile.subjectProfile.realWorld}.` },
       ],
     },
-    concepts: [
-      { label: "KEY IDEA", icon: "💡", words: [lead, "meaning", "focus"], example: `${topic} gives the class a clear focus for learning.` },
-      { label: "PURPOSE", icon: "🎯", words: [second, "goal", "outcome"], example: `${topic} helps learners work toward a clear goal.` },
-      { label: "PROCESS", icon: "🧭", words: [third, "steps", "sequence"], example: `Students can follow ${topic} step by step.` },
-      { label: "EXAMPLES", icon: "🧪", words: [lead, "model", "sample"], example: `A strong example makes ${topic} easier to understand.` },
-      { label: "APPLICATION", icon: "🛠", words: [second, "task", "practice"], example: `${topic} becomes meaningful when used in a task.` },
-      { label: "REAL LIFE", icon: "🌍", words: [third, "daily life", "community"], example: `${topic} can be connected to home, school, and community situations.` },
-      { label: "COMMON ERRORS", icon: "⚠", words: ["confusion", "missing details", "weak explanation"], example: `Students improve ${topic} by noticing common mistakes.` },
-      { label: "REFLECTION", icon: "🔍", words: ["insight", "growth", "improvement"], example: `Reflection strengthens understanding of ${topic}.` },
-    ],
+    concepts,
     application: {
-      title: "Let's Practice!",
-      wordBox: keywords,
+      title: "Student Practice",
+      wordBox: keywords.slice(0, 5),
       items: pickByDetail(
         detailLevel,
         [
-          `${topic} helps students understand __________ more clearly.`,
-          `A strong example of ${topic} should include a clear __________.`,
-          `${topic} becomes useful in real-life __________.`,
-          `Reflection helps students improve their understanding of __________.`,
+          `Write one sentence that uses ${topic} to show clear thinking.`,
+          `Give one example that shows ${topic} in ${profile.subjectProfile.realWorld}.`,
+          `Explain how a student can improve their work on ${topic}.`,
+          `Reflect: what part of ${topic} is easier for you now?`,
         ],
         [
-          `${topic} helps students understand __________ more clearly.`,
-          `A strong example of ${topic} should include a clear __________.`,
-          `Learners use ${topic} during guided __________.`,
-          `${topic} becomes useful when connected to real-life __________.`,
-          `Reflection helps students improve their understanding of __________.`,
+          `Write one short response, solution, or explanation that shows ${topic} clearly.`,
+          `Use one example or detail to support your thinking about ${topic}.`,
+          `Explain how ${topic} connects to ${profile.subjectProfile.realWorld}.`,
+          `Revise one part of your work so ${topic} becomes clearer or stronger.`,
+          `Reflect on what helped you understand ${topic} today.`,
         ],
         [
-          `${topic} helps students understand __________ more clearly.`,
-          `A strong example of ${topic} should include a clear __________.`,
-          `Learners use ${topic} during guided __________.`,
-          `${topic} becomes useful when connected to real-life __________.`,
-          `Reflection helps students improve their understanding of __________.`,
+          `Write one short response, solution, or explanation that shows ${topic} clearly.`,
+          `Use one example or detail to support your thinking about ${topic}.`,
+          `Explain how ${topic} connects to ${profile.subjectProfile.realWorld}.`,
+          `Revise one part of your work so ${topic} becomes clearer or stronger.`,
+          `Give feedback to a classmate about how they used ${topic}.`,
         ]
       ),
     },
@@ -862,32 +1020,37 @@ function createLocalLessonData(form) {
       prompt: `How can learners apply ${topic} beyond today's activity?`,
       body: pickByDetail(
         detailLevel,
-        `Ask students to connect ${topic} to a different subject, a home situation, or a short real-world example.`,
-        `Ask students to connect ${topic} to a different subject, a home situation, or a short real-world example so they can see how the concept transfers beyond the first task.`,
-        `Ask students to connect ${topic} to a different subject, a home situation, or a short real-world example. This helps them transfer the idea, compare contexts, and explain why the concept still matters.`
+        `Invite students to use ${topic} in a different subject, home situation, or real-world example.`,
+        `Invite students to use ${topic} in a different subject, home situation, or real-world example so they can see how the concept transfers beyond the first task.`,
+        `Invite students to use ${topic} in a different subject, home situation, or real-world example. This helps them transfer the idea, compare contexts, and explain why the concept still matters.`
       ),
     },
     assessment: [
-      { points: 2, question: `What is the main idea of ${topic}?` },
-      { points: 2, question: `Give one classroom example related to ${topic}.` },
-      { points: 3, question: `Explain why ${topic} is important for ${subject} learners.` },
-      { points: 3, question: `Write one short response showing what you learned about ${topic}.` },
+      { points: 2, question: `What is one key idea every student should understand about ${topic}?` },
+      { points: 2, question: `Give one example that shows ${topic} clearly.` },
+      { points: 3, question: `Explain how ${topic} helps a learner in ${subject}.` },
+      { points: 3, question: `Create a short response, solution, or explanation that applies ${topic}.` },
     ],
     assignment: {
-      task: `Create a short output that explains ${topic} in your own words. Include one example, one practical use, and one reflection about why the lesson matters.`,
-      checklist: ["Use your own words", "Give one clear example", "Write neatly and completely"],
+      task: `Create your own ${profile.subjectProfile.studentProduct} that uses ${topic}. Include an example, a clear explanation, and a short reflection on what choice you made as a learner.`,
+      checklist: ["Use your own words or reasoning", "Include one clear example or support", "Add one reflection or student voice note"],
       topics: [
-        `${topic} at school`,
-        `${topic} at home`,
+        `${topic} in school life`,
+        `${topic} in home situations`,
         `${topic} in the community`,
-        `${topic} in everyday life`,
+        `${topic} in a situation you care about`,
       ],
     },
-    closingQuote: `${topic} grows stronger when students understand it, practice it, and use it with confidence.`,
+    closingQuote: pickByDetail(
+      detailLevel,
+      `${topic} grows when students question, test, and use it for themselves.`,
+      `${topic} grows when students question, test, explain, and use it for themselves.`,
+      `${topic} grows when students question, test, explain, revise, and use it for themselves in new contexts.`
+    ),
     takeaways: [
-      `Know the key idea of ${topic}`,
-      `Use ${topic} in meaningful tasks`,
-      `Reflect on how ${topic} helps learning`,
+      `Students can explain ${topic}`,
+      `Students can apply ${topic}`,
+      `Students can reflect on ${topic}`,
     ],
   };
 }
