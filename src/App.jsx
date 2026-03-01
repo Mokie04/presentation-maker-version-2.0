@@ -532,12 +532,39 @@ export default function App() {
   const [progress, setProgress] = useState("");
   const [generatedData, setGeneratedData] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
 
   const subjectOptions = ["English", "Filipino", "Science", "Mathematics", "Araling Panlipunan", "EAPP", "Literature", "History"];
   const gradeOptions = ["7", "8", "9", "10", "11", "12"];
   const quarterOptions = ["First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter"];
+  const wizardSteps = [
+    { id: "lesson", number: "01", title: "Lesson Setup", subtitle: "Topic, subject, grade, and competency" },
+    { id: "design", number: "02", title: "Design Style", subtitle: "Template and color palette" },
+    { id: "objectives", number: "03", title: "Objectives", subtitle: "Learning goals and extra notes" },
+    { id: "review", number: "04", title: "Review & Generate", subtitle: "Check your choices before export" },
+  ];
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const canGoNext = currentStep === 0
+    ? Boolean(form.topic.trim() && form.subject.trim())
+    : currentStep === 1
+      ? Boolean(form.template && form.palette)
+      : true;
+  const nextStep = () => {
+    if (!canGoNext) {
+      setErrorMsg("Complete the required fields in this step before continuing.");
+      setStatus("error");
+      return;
+    }
+    setStatus("idle");
+    setErrorMsg("");
+    setCurrentStep((step) => Math.min(step + 1, wizardSteps.length - 1));
+  };
+  const prevStep = () => {
+    setStatus("idle");
+    setErrorMsg("");
+    setCurrentStep((step) => Math.max(step - 1, 0));
+  };
 
   async function handleGenerate() {
     if (!form.topic.trim()) {
@@ -621,6 +648,30 @@ export default function App() {
     .success-icon{font-size:52px;margin-bottom:12px}
     .success-title{font-size:20px;font-weight:900;color:#16A34A;margin-bottom:6px}
     .success-sub{font-size:14px;color:#6B7280;margin-bottom:20px;font-weight:600}
+    .wizard-shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;align-items:start}
+    .wizard-rail{background:linear-gradient(180deg,#F8F5FF,#FFFFFF);border:1px solid #E9DDFD;border-radius:24px;padding:18px}
+    .wizard-rail-title{font-size:12px;font-weight:800;letter-spacing:.16em;color:#7C3AED;text-transform:uppercase;margin-bottom:14px}
+    .wizard-step{padding:12px 12px 12px 14px;border-radius:18px;border:1px solid transparent;transition:all .2s}
+    .wizard-step.active{background:#FFFFFF;border-color:#D8B4FE;box-shadow:0 12px 30px #7C3AED12}
+    .wizard-step.done{opacity:.8}
+    .wizard-num{font-size:11px;font-weight:900;letter-spacing:.14em;color:#A78BFA;margin-bottom:6px}
+    .wizard-step.active .wizard-num{color:#7C3AED}
+    .wizard-name{font-size:14px;font-weight:800;color:#111827;margin-bottom:4px}
+    .wizard-sub{font-size:12px;color:#6B7280;font-weight:600;line-height:1.35}
+    .wizard-main{background:#FFFFFF;border:1px solid #ECE7F7;border-radius:24px;padding:28px}
+    .wizard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
+    .wizard-kicker{font-size:12px;font-weight:900;letter-spacing:.16em;color:#7C3AED;text-transform:uppercase;margin-bottom:8px}
+    .wizard-title{font-size:28px;font-weight:900;color:#111827;line-height:1.05}
+    .wizard-copy{font-size:14px;color:#6B7280;font-weight:600;max-width:440px;margin-top:8px}
+    .wizard-panel{min-height:430px}
+    .wizard-nav{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid #EEE7F8}
+    .btn-secondary{padding:14px 20px;border-radius:14px;border:2px solid #E5E7EB;background:#FFFFFF;color:#374151;font-size:14px;font-weight:800;cursor:pointer}
+    .btn-secondary:hover{background:#F9FAFB}
+    .btn-secondary:disabled{opacity:.5;cursor:not-allowed}
+    .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .summary-card{border:1px solid #E5E7EB;border-radius:18px;padding:16px;background:#FCFCFF}
+    .summary-label{font-size:11px;font-weight:900;letter-spacing:.12em;color:#8B5CF6;text-transform:uppercase;margin-bottom:8px}
+    .summary-value{font-size:15px;font-weight:700;color:#111827;line-height:1.35}
     .preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:16px 0}
     .preview-pill{background:#fff;border:2px solid #E5E7EB;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;color:#374151;text-align:center}
     .preview-pill span{display:block;font-size:16px;margin-bottom:2px}
@@ -651,6 +702,7 @@ export default function App() {
     .swatch{width:18px;height:18px;border-radius:999px;border:1px solid #ffffffaa;box-shadow:0 0 0 1px #E5E7EB}
     @media(max-width:600px){.grid-2{grid-template-columns:1fr}}
     @media(max-width:600px){.choice-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.wizard-shell{grid-template-columns:1fr}.wizard-rail{padding:14px}.wizard-main{padding:22px}.summary-grid{grid-template-columns:1fr}}
   `;
 
   const slideLabels = [
@@ -679,132 +731,214 @@ export default function App() {
 
         {status === "idle" || status === "error" ? (
           <div className="card">
-            <div className="section-title">Lesson Information</div>
-            <div className="grid-2">
-              <div className="field">
-                <label>Subject</label>
-                <select value={form.subject} onChange={(e) => set("subject", e.target.value)}>
-                  {subjectOptions.map((subject) => <option key={subject}>{subject}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label>Grade Level</label>
-                <select value={form.gradeLevel} onChange={(e) => set("gradeLevel", e.target.value)}>
-                  {gradeOptions.map((grade) => <option key={grade} value={grade}>Grade {grade}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label>Quarter</label>
-              <select value={form.quarter} onChange={(e) => set("quarter", e.target.value)}>
-                {quarterOptions.map((quarter) => <option key={quarter}>{quarter}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Topic / Lesson Title <span className="tag">Required</span></label>
-              <input
-                placeholder="e.g. Expository Essay on the Use of Transitional Devices"
-                value={form.topic}
-                onChange={(e) => set("topic", e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label>Competency</label>
-              <textarea
-                placeholder="e.g. Examine linguistic features as tools to achieve organizational efficiency in informational texts."
-                value={form.competency}
-                onChange={(e) => set("competency", e.target.value)}
-              />
-            </div>
-
-            <div className="section-title" style={{ marginTop: 8 }}>Design Setup</div>
-            <div className="field">
-              <label>Template</label>
-              <div className="choice-grid">
-                {Object.entries(TEMPLATE_OPTIONS).map(([key, option]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`choice-btn ${form.template === key ? "active" : ""}`}
-                    onClick={() => set("template", key)}
-                  >
-                    <div className="choice-title">{option.label}</div>
-                    <div className="choice-text">{option.description}</div>
-                    <div className="tag" style={{ marginTop: 10 }}>{option.badge}</div>
-                  </button>
+            <div className="wizard-shell">
+              <div className="wizard-rail">
+                <div className="wizard-rail-title">Workflow</div>
+                {wizardSteps.map((step, index) => (
+                  <div key={step.id} className={`wizard-step ${currentStep === index ? "active" : ""} ${currentStep > index ? "done" : ""}`}>
+                    <div className="wizard-num">{step.number}</div>
+                    <div className="wizard-name">{step.title}</div>
+                    <div className="wizard-sub">{step.subtitle}</div>
+                  </div>
                 ))}
               </div>
-            </div>
-            <div className="field">
-              <label>Color Palette</label>
-              <div className="choice-grid">
-                {Object.entries(PALETTES).map(([key, option]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`choice-btn ${form.palette === key ? "active" : ""}`}
-                    onClick={() => set("palette", key)}
-                  >
-                    <div className="choice-title">{option.label}</div>
-                    <div className="choice-text">Applies this palette to title, content cards, and closing slides.</div>
-                    <div className="swatch-row">
-                      {option.preview.map((color) => <span key={color} className="swatch" style={{ background: color }} />)}
+
+              <div className="wizard-main">
+                <div className="wizard-head">
+                  <div>
+                    <div className="wizard-kicker">Step {wizardSteps[currentStep].number}</div>
+                    <div className="wizard-title">{wizardSteps[currentStep].title}</div>
+                    <div className="wizard-copy">{wizardSteps[currentStep].subtitle}</div>
+                  </div>
+                  <div className="tag">{currentStep + 1} / {wizardSteps.length}</div>
+                </div>
+
+                <div className="wizard-panel">
+                  {currentStep === 0 && (
+                    <>
+                      <div className="grid-2">
+                        <div className="field">
+                          <label>Subject</label>
+                          <select value={form.subject} onChange={(e) => set("subject", e.target.value)}>
+                            {subjectOptions.map((subject) => <option key={subject}>{subject}</option>)}
+                          </select>
+                        </div>
+                        <div className="field">
+                          <label>Grade Level</label>
+                          <select value={form.gradeLevel} onChange={(e) => set("gradeLevel", e.target.value)}>
+                            {gradeOptions.map((grade) => <option key={grade} value={grade}>Grade {grade}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid-2">
+                        <div className="field">
+                          <label>Quarter</label>
+                          <select value={form.quarter} onChange={(e) => set("quarter", e.target.value)}>
+                            {quarterOptions.map((quarter) => <option key={quarter}>{quarter}</option>)}
+                          </select>
+                        </div>
+                        <div className="field">
+                          <label>Topic / Lesson Title <span className="tag">Required</span></label>
+                          <input
+                            placeholder="e.g. Expository Essay on the Use of Transitional Devices"
+                            value={form.topic}
+                            onChange={(e) => set("topic", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="field">
+                        <label>Competency</label>
+                        <textarea
+                          placeholder="e.g. Examine linguistic features as tools to achieve organizational efficiency in informational texts."
+                          value={form.competency}
+                          onChange={(e) => set("competency", e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {currentStep === 1 && (
+                    <>
+                      <div className="field">
+                        <label>Template</label>
+                        <div className="choice-grid">
+                          {Object.entries(TEMPLATE_OPTIONS).map(([key, option]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              className={`choice-btn ${form.template === key ? "active" : ""}`}
+                              onClick={() => set("template", key)}
+                            >
+                              <div className="choice-title">{option.label}</div>
+                              <div className="choice-text">{option.description}</div>
+                              <div className="tag" style={{ marginTop: 10 }}>{option.badge}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="field">
+                        <label>Color Palette</label>
+                        <div className="choice-grid">
+                          {Object.entries(PALETTES).map(([key, option]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              className={`choice-btn ${form.palette === key ? "active" : ""}`}
+                              onClick={() => set("palette", key)}
+                            >
+                              <div className="choice-title">{option.label}</div>
+                              <div className="choice-text">Applies this palette to title, content cards, and closing slides.</div>
+                              <div className="swatch-row">
+                                {option.preview.map((color) => <span key={color} className="swatch" style={{ background: color }} />)}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {currentStep === 2 && (
+                    <>
+                      <div className="field">
+                        <label>Knowledge Objective <span className="tag">Optional - generator will draft if blank</span></label>
+                        <input
+                          placeholder="e.g. Define transitional devices and explain their role in organizational efficiency"
+                          value={form.objKnowledge}
+                          onChange={(e) => set("objKnowledge", e.target.value)}
+                        />
+                      </div>
+                      <div className="field">
+                        <label>Skills Objective</label>
+                        <input
+                          placeholder="e.g. Identify, classify, and use transitional devices to improve coherence of written texts"
+                          value={form.objSkills}
+                          onChange={(e) => set("objSkills", e.target.value)}
+                        />
+                      </div>
+                      <div className="field">
+                        <label>Attitude Objective</label>
+                        <input
+                          placeholder="e.g. Appreciate the value of transitional devices in producing coherent informational texts"
+                          value={form.objAttitude}
+                          onChange={(e) => set("objAttitude", e.target.value)}
+                        />
+                      </div>
+                      <div className="field">
+                        <label>Any extra notes for the generator? (optional)</label>
+                        <textarea
+                          placeholder="e.g. Focus on examples from environmental issues. Make it fun and interactive. Include Filipino sample sentences."
+                          value={form.extraContext}
+                          onChange={(e) => set("extraContext", e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {currentStep === 3 && (
+                    <div className="summary-grid">
+                      <div className="summary-card">
+                        <div className="summary-label">Lesson</div>
+                        <div className="summary-value">{form.topic || "No topic yet"}</div>
+                      </div>
+                      <div className="summary-card">
+                        <div className="summary-label">Class Setup</div>
+                        <div className="summary-value">{form.subject} • Grade {form.gradeLevel} • {form.quarter}</div>
+                      </div>
+                      <div className="summary-card">
+                        <div className="summary-label">Template</div>
+                        <div className="summary-value">{TEMPLATE_OPTIONS[form.template].label} • {PALETTES[form.palette].label}</div>
+                      </div>
+                      <div className="summary-card">
+                        <div className="summary-label">Competency</div>
+                        <div className="summary-value">{form.competency || "Generator will create a default competency note."}</div>
+                      </div>
+                      <div className="summary-card">
+                        <div className="summary-label">Objectives</div>
+                        <div className="summary-value">
+                          {form.objKnowledge || "Knowledge auto"}
+                          <br />
+                          {form.objSkills || "Skills auto"}
+                          <br />
+                          {form.objAttitude || "Attitude auto"}
+                        </div>
+                      </div>
+                      <div className="summary-card">
+                        <div className="summary-label">Extra Context</div>
+                        <div className="summary-value">{form.extraContext || "No extra notes."}</div>
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                {status === "error" && (
+                  <div className="error-box" style={{ marginBottom: 16 }}>
+                    <div className="error-title">Oops! Something went wrong</div>
+                    <div className="error-msg">{errorMsg}</div>
+                  </div>
+                )}
+
+                <div className="wizard-nav">
+                  <button type="button" className="btn-secondary" onClick={prevStep} disabled={currentStep === 0}>
+                    Back
                   </button>
-                ))}
+                  {currentStep < wizardSteps.length - 1 ? (
+                    <button type="button" className="btn-generate" style={{ width: "auto", minWidth: 190 }} onClick={nextStep}>
+                      Continue
+                    </button>
+                  ) : (
+                    <button
+                      className="btn-generate"
+                      style={{ width: "auto", minWidth: 240 }}
+                      onClick={handleGenerate}
+                      disabled={!form.topic.trim()}
+                    >
+                      Generate My Presentation
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-
-            <div className="section-title" style={{ marginTop: 8 }}>Learning Objectives</div>
-            <div className="field">
-              <label>Knowledge Objective <span className="tag">Optional - generator will draft if blank</span></label>
-              <input
-                placeholder="e.g. Define transitional devices and explain their role in organizational efficiency"
-                value={form.objKnowledge}
-                onChange={(e) => set("objKnowledge", e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label>Skills Objective</label>
-              <input
-                placeholder="e.g. Identify, classify, and use transitional devices to improve coherence of written texts"
-                value={form.objSkills}
-                onChange={(e) => set("objSkills", e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label>Attitude Objective</label>
-              <input
-                placeholder="e.g. Appreciate the value of transitional devices in producing coherent informational texts"
-                value={form.objAttitude}
-                onChange={(e) => set("objAttitude", e.target.value)}
-              />
-            </div>
-
-            <div className="section-title" style={{ marginTop: 8 }}>Additional Context</div>
-            <div className="field">
-              <label>Any extra notes for the generator? (optional)</label>
-              <textarea
-                placeholder="e.g. Focus on examples from environmental issues. Make it fun and interactive. Include Filipino sample sentences."
-                value={form.extraContext}
-                onChange={(e) => set("extraContext", e.target.value)}
-              />
-            </div>
-
-            {status === "error" && (
-              <div className="error-box" style={{ marginBottom: 16 }}>
-                <div className="error-title">Oops! Something went wrong</div>
-                <div className="error-msg">{errorMsg}</div>
-              </div>
-            )}
-
-            <button
-              className="btn-generate"
-              onClick={handleGenerate}
-              disabled={!form.topic.trim()}
-            >
-              Generate My Presentation
-            </button>
           </div>
         ) : status === "loading" ? (
           <div className="card">
@@ -841,7 +975,7 @@ export default function App() {
                 <button className="btn-dl" onClick={handleRedownload}>
                   Download PowerPoint (.pptx)
                 </button>
-                <button className="btn-new" onClick={() => { setStatus("idle"); setGeneratedData(null); }}>
+                <button className="btn-new" onClick={() => { setStatus("idle"); setGeneratedData(null); setCurrentStep(0); }}>
                   Create Another Presentation
                 </button>
               </div>
